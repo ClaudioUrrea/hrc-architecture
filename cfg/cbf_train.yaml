@@ -1,0 +1,44 @@
+# Configuration for manuscript electronics-4535423.
+# Every quantity produced by this file is SIMULATED: the robot, sensor and PLC
+# endpoints are vendor software simulators, not physical equipment.
+seed_manifest: config/seeds.json
+platform:
+  os: Ubuntu 22.04.4 LTS
+  kernel: 5.15.0-105 PREEMPT_RT
+  isolcpus: [6, 7]
+  scheduler: {policy: SCHED_FIFO, priority: 90}
+  cpu: Intel Core i7-10700K
+  accelerator: NVIDIA Jetson Xavier NX (JetPack 5.1.2, CUDA 11.4, TensorRT 8.5.2, 15 W 6-core)
+toolchain:
+  compiler: GCC 11.4.0
+  std: c++17
+  flags: [-O2, -march=native]
+  open62541: 1.3.9
+  pymodbus: 3.6.6
+  ethercat_master: IgH 1.5.2
+  qpoases: 3.2.1
+simulators:
+  cell: CoppeliaSim 4.6.0 rev18 (Bullet 2.78, 5 ms step)
+  cameras: 6x Intel RealSense D435 model, 1280x720 @ 30 fps
+
+run:
+  name: cbf_train
+model:
+  input_dim: 66            # 6 joint positions + 20 skeleton keypoints x 3
+  hidden: [128, 128, 128]
+  activation: LeakyReLU(alpha=0.01)
+  spectral_normalization: true
+  certified_lipschitz_upper_bound: 10.0
+data:
+  samples: 50000
+  train: 40000
+  holdout: 10000
+  stratify_by: scenario
+  label_safe_mm: 150
+  label_unsafe_mm: 100
+  gray_zone_mm: [100, 150]   # unlabelled, excluded from training
+  gray_zone_eval_samples: 5000
+optimizer: {name: adam, lr: 1.0e-3, batch_size: 256, epochs: 500, early_stopping: true}
+export: {onnx_opset: 17, trt_precision: fp16}
+outputs:
+  dataset: data/cbf_dataset_66d.npz

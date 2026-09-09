@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Inter-failure intervals",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "index",
+      "interval_h",
+      "population"
+    ],
+    "properties": {
+      "index": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "interval_h": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      },
+      "population": {
+        "enum": [
+          "service_affecting"
+        ]
+      }
+    }
+  }
+}

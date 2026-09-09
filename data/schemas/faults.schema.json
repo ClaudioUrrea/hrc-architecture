@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fault campaign events",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "event_id",
+      "category",
+      "t_hours",
+      "detection_ms",
+      "service_affecting"
+    ],
+    "properties": {
+      "event_id": {
+        "type": "integer"
+      },
+      "category": {
+        "enum": [
+          "tracking_loss",
+          "sensor_timeout",
+          "computational_overrun",
+          "hardware_communication",
+          "configuration_inconsistency",
+          "network_partition",
+          "constraint_violation",
+          "memory_allocation"
+        ]
+      },
+      "t_hours": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 200
+      },
+      "detection_ms": {
+        "type": "number",
+        "minimum": 0
+      },
+      "recovery_s": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "service_affecting": {
+        "enum": [
+          "yes",
+          "no"
+        ]
+      },
+      "operator_intervention": {
+        "enum": [
+          "yes",
+          "no"
+        ]
+      }
+    }
+  }
+}

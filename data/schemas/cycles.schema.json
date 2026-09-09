@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Control-cycle telemetry",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "cycle",
+      "t_s",
+      "cycle_ms",
+      "scenario"
+    ],
+    "properties": {
+      "cycle": {
+        "type": "integer"
+      },
+      "t_s": {
+        "type": "number"
+      },
+      "cycle_ms": {
+        "type": "number",
+        "description": "buffer dequeue to buffer write-back; excludes actuation"
+      },
+      "cbf_ms": {
+        "type": "number"
+      },
+      "qp_ms": {
+        "type": "number"
+      },
+      "dispatch_ms": {
+        "type": "number"
+      },
+      "sensor_age_ms": {
+        "type": "number"
+      },
+      "scenario": {
+        "type": "string"
+      },
+      "deadline_miss": {
+        "type": "boolean"
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Adaptation effort log",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "platform",
+      "task",
+      "hours",
+      "counted"
+    ],
+    "properties": {
+      "platform": {
+        "enum": [
+          "kuka",
+          "abb"
+        ]
+      },
+      "task": {
+        "type": "string"
+      },
+      "hours": {
+        "type": "number",
+        "minimum": 0
+      },
+      "counted": {
+        "enum": [
+          "yes",
+          "no"
+        ]
+      },
+      "note": {
+        "type": "string"
+      }
+    }
+  }
+}

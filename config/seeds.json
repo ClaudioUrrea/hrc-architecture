@@ -1,0 +1,29 @@
+{
+  "master_seed": 20260215,
+  "generator": "philox4x64 counter-based, key = master_seed",
+  "scenarios": {
+    "S1": 20261224,
+    "S2": 20262233,
+    "S3": 20263242,
+    "S4": 20264251,
+    "S5": 20265260,
+    "S6": 20266269
+  },
+  "fault_injection": {
+    "stream": 20268134
+  },
+  "ablation": {
+    "A0": 20364944,
+    "A1": 20364945,
+    "A2": 20364946,
+    "A3": 20364947
+  },
+  "cbf_training": {
+    "init": 20291552,
+    "split": 20291553
+  },
+  "bootstrap": {
+    "weibull_shape": 20260908,
+    "bca_segments": 11072026
+  }
+}

@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+title: >-
+  HRC-Architecture: vendor-neutral embedded control architecture for
+  safety-critical human-robot collaboration
+message: If you use this software or these data, please cite both the software and the article.
+type: software
+authors:
+  - family-names: Urrea
+    given-names: Claudio
+    orcid: https://orcid.org/0000-0001-7197-8928
+    affiliation: >-
+      Electrical Engineering Department, Faculty of Engineering,
+      University of Santiago of Chile
+repository-code: https://github.com/ClaudioUrrea/hrc-architecture
+license: MIT
+version: 1.0.0
+date-released: '2026-09-09'
+identifiers:
+  - type: doi
+    value: 10.6084/m9.figshare.33194013
+    description: Archived release, datasets and figures
+keywords:
+  - embedded control architecture
+  - human-robot collaboration
+  - hardware abstraction layer
+  - bounded-latency execution
+  - control barrier functions
+  - OPC-UA
+  - EtherCAT
+  - reproducibility
+preferred-citation:
+  type: article
+  title: >-
+    Vendor-Neutral Embedded Control Architecture for Safety-Critical
+    Human-Robot Collaboration: Hardware Abstraction, Bounded-Latency Execution
+    and Industrial Protocol Integration Evaluated Against Simulated Vendor
+    Interfaces
+  authors:
+    - family-names: Urrea
+      given-names: Claudio
+      orcid: https://orcid.org/0000-0001-7197-8928
+  journal: Electronics
+  year: 2026
+  notes: Manuscript electronics-4535423, under review

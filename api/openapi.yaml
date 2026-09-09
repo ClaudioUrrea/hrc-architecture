@@ -1,0 +1,90 @@
+openapi: 3.0.3
+info:
+  title: HRC control cell API
+  version: 1.0.0
+  description: >-
+    REST interface of the integration layer. Rate-limited to 200 requests per
+    minute per client. Bearer tokens are JSON Web Tokens issued under OAuth 2.0;
+    operator interfaces use the authorization-code flow with PKCE, machine-to-machine
+    integrations use client credentials. Scopes separate telemetry, task submission,
+    configuration and safety override.
+servers:
+  - url: https://cell.local/api/v1
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://cell.local/oauth/token
+          scopes:
+            telemetry:read: read robot, sensor and safety state
+            task:write: submit, pause, resume and abort missions
+            config:write: apply validated configuration transactions
+            safety:override: set the velocity override factor
+  schemas:
+    RobotState:
+      type: object
+      required: [joint_positions, joint_velocities, operational_state]
+      properties:
+        joint_positions: {type: array, items: {type: number}, minItems: 6, maxItems: 6}
+        joint_velocities: {type: array, items: {type: number}, minItems: 6, maxItems: 6}
+        cartesian_pose: {type: array, items: {type: number}, minItems: 7, maxItems: 7}
+        operational_state: {type: string, enum: [idle, running, protective_stop, fault]}
+        safety_override: {type: number, minimum: 0, maximum: 1}
+    SafetyState:
+      type: object
+      properties:
+        minimum_distance_mm: {type: number}
+        protective_separation_distance_mm: {type: number}
+        barrier_value: {type: number}
+        barrier_trustworthy:
+          type: boolean
+          description: false when the learned value falls in the unlabelled gray zone
+        zone_violation: {type: boolean}
+paths:
+  /state/robot:
+    get:
+      summary: Current robot state
+      security: [{oauth2: [telemetry:read]}]
+      responses:
+        '200':
+          description: OK
+          content: {application/json: {schema: {$ref: '#/components/schemas/RobotState'}}}
+  /state/safety:
+    get:
+      summary: Current safety state
+      security: [{oauth2: [telemetry:read]}]
+      responses:
+        '200':
+          description: OK
+          content: {application/json: {schema: {$ref: '#/components/schemas/SafetyState'}}}
+  /mission:
+    post:
+      summary: Submit a mission
+      security: [{oauth2: [task:write]}]
+      responses:
+        '202': {description: Accepted}
+        '409': {description: Rejected; cell not in a state that admits a mission}
+  /mission/{id}/abort:
+    post:
+      summary: Abort a mission
+      security: [{oauth2: [task:write]}]
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses:
+        '202': {description: Accepted}
+  /override:
+    put:
+      summary: Set the velocity override factor
+      security: [{oauth2: [safety:override]}]
+      responses:
+        '200': {description: Applied}
+        '422': {description: Factor outside [0, 1]}
+  /config:
+    put:
+      summary: Apply a configuration transaction
+      description: Atomic; validated against physical limits; rolls back on failure.
+      security: [{oauth2: [config:write]}]
+      responses:
+        '200': {description: Applied}
+        '422': {description: Validation failed; previous configuration retained}
