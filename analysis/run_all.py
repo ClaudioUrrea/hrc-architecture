@@ -11,6 +11,7 @@ def main(out):
     for name in MODULES:
         mod = importlib.import_module(name)
         results[name] = mod.main() if name != "reliability" else mod.main("data/interfailure.csv")
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w") as fh:
         json.dump(results, fh, indent=2)
     print(f"wrote {out}")
