@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "stage_timings",
+  "description": "Per-stage timing. Column schema for stage_timings.parquet, deposit v2.1.0. RECONSTRUCTED data, not instrument recordings (docs/DATA_PROVENANCE.md).",
+  "type": "object",
+  "properties": {
+    "cycle_index": {
+      "description": "int64"
+    },
+    "stage": {
+      "description": "string"
+    },
+    "device": {
+      "description": "string"
+    },
+    "start_event": {
+      "description": "string"
+    },
+    "stop_event": {
+      "description": "string"
+    },
+    "duration_ms": {
+      "description": "double"
+    },
+    "on_critical_path": {
+      "description": "bool"
+    }
+  }
+}

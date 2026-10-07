@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PLC commissioning runs",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "platform",
+      "run",
+      "hours"
+    ],
+    "properties": {
+      "platform": {
+        "enum": [
+          "siemens",
+          "rockwell",
+          "mitsubishi"
+        ]
+      },
+      "toolchain": {
+        "type": "string"
+      },
+      "run": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "hours": {
+        "type": "number",
+        "minimum": 0
+      },
+      "network_min": {
+        "type": "number"
+      },
+      "client_min": {
+        "type": "number"
+      },
+      "mapping_min": {
+        "type": "number"
+      },
+      "logic_min": {
+        "type": "number"
+      },
+      "test_min": {
+        "type": "number"
+      }
+    }
+  }
+}

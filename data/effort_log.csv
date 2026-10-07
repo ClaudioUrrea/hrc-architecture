@@ -1,0 +1,11 @@
+platform,task,hours,counted,note
+kuka,vendor SDK integration and build configuration,6.0,yes,Sunrise.Connectivity FRI 2.0
+kuka,adapter implementation,7.0,yes,KUKARobotController 523 LOC
+kuka,unit tests and execution against simulator,5.0,yes,47 behavioural-equivalence tests
+kuka,documentation authoring,0.0,no,excluded by the accounting rules
+kuka,code review,0.0,no,did not occur (single author)
+abb,vendor SDK integration and build configuration,5.0,yes,RWS / Externally Guided Motion
+abb,adapter implementation,6.5,yes,ABBRobotController 456 LOC
+abb,unit tests and execution against simulator,4.5,yes,47 behavioural-equivalence tests
+abb,documentation authoring,0.0,no,excluded by the accounting rules
+abb,code review,0.0,no,did not occur (single author)

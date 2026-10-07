@@ -1,0 +1,132 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "hrc-architecture-1.0.0",
+  "documentNamespace": "https://github.com/ClaudioUrrea/hrc-architecture/spdx/1.0.0",
+  "creationInfo": {
+    "created": "2026-09-09T00:00:00Z",
+    "creators": [
+      "Person: Claudio Urrea"
+    ]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-hrc",
+      "name": "hrc-architecture",
+      "versionInfo": "1.0.0",
+      "licenseDeclared": "MIT",
+      "downloadLocation": "https://github.com/ClaudioUrrea/hrc-architecture"
+    },
+    {
+      "SPDXID": "SPDXRef-open62541",
+      "name": "open62541",
+      "versionInfo": "1.3.9",
+      "licenseDeclared": "MPL-2.0",
+      "downloadLocation": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-pymodbus",
+      "name": "pymodbus",
+      "versionInfo": "3.6.6",
+      "licenseDeclared": "BSD-3-Clause",
+      "downloadLocation": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-igh",
+      "name": "IgH EtherCAT Master",
+      "versionInfo": "1.5.2",
+      "licenseDeclared": "GPL-2.0-only",
+      "downloadLocation": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-qpoases",
+      "name": "qpOASES",
+      "versionInfo": "3.2.1",
+      "licenseDeclared": "LGPL-2.1-or-later",
+      "downloadLocation": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-tensorrt",
+      "name": "NVIDIA TensorRT",
+      "versionInfo": "8.5.2",
+      "licenseDeclared": "LicenseRef-NVIDIA-SLA",
+      "downloadLocation": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-pytorch",
+      "name": "PyTorch",
+      "versionInfo": "2.1.0",
+      "licenseDeclared": "BSD-3-Clause",
+      "downloadLocation": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-numpy",
+      "name": "numpy",
+      "versionInfo": "2.1.3",
+      "licenseDeclared": "BSD-3-Clause",
+      "downloadLocation": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-scipy",
+      "name": "scipy",
+      "versionInfo": "1.14.1",
+      "licenseDeclared": "BSD-3-Clause",
+      "downloadLocation": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-matplotlib",
+      "name": "matplotlib",
+      "versionInfo": "3.9.2",
+      "licenseDeclared": "PSF-2.0",
+      "downloadLocation": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-open62541"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pymodbus"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-igh"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-qpoases"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-tensorrt"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-pytorch"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-numpy"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-scipy"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-hrc",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-matplotlib"
+    }
+  ]
+}

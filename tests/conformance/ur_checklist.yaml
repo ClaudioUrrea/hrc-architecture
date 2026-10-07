@@ -1,0 +1,77 @@
+# Conformance checklist, derived clause by clause from the cited vendor
+# document. status: reproduced | simplified | absent.
+# An item passes when the simulator's observable response to a call matches
+# the response the document specifies, in value, in type and in ordering.
+# An 'absent' item is NOT a failure: it records a behaviour that cannot be
+# exercised in simulation at all, and about which this paper therefore makes
+# no claim anywhere.
+interface: ur
+items:
+  - id: ur-01
+    behaviour: 'RTDE protocol version negotiation'
+    status: reproduced
+    result: pass
+  - id: ur-02
+    behaviour: 'Output recipe setup and field ordering'
+    status: reproduced
+    result: pass
+  - id: ur-03
+    behaviour: 'Input recipe write and acknowledgement'
+    status: reproduced
+    result: pass
+  - id: ur-04
+    behaviour: 'Actual TCP pose: units, frame, rotation-vector convention'
+    status: reproduced
+    result: pass
+  - id: ur-05
+    behaviour: 'Joint position, velocity and current field layout'
+    status: reproduced
+    result: pass
+  - id: ur-06
+    behaviour: 'Robot mode and safety mode enumerations'
+    status: reproduced
+    result: pass
+  - id: ur-07
+    behaviour: 'Runtime state transitions on pause and resume'
+    status: reproduced
+    result: pass
+  - id: ur-08
+    behaviour: 'servoj argument range checking and rejection'
+    status: reproduced
+    result: pass
+  - id: ur-09
+    behaviour: 'Documented error codes raised and mapped'
+    status: reproduced
+    result: pass
+  - id: ur-10
+    behaviour: 'Nominal 125 Hz publication rate at the adapter boundary'
+    status: reproduced
+    result: pass
+  - id: ur-11
+    behaviour: 'Transport delay distribution'
+    status: simplified
+    result: pass
+  - id: ur-12
+    behaviour: 'Motion-queue back-pressure under sustained servoj'
+    status: simplified
+    result: pass
+  - id: ur-13
+    behaviour: 'Reconnection after socket teardown'
+    status: simplified
+    result: pass
+  - id: ur-14
+    behaviour: 'Safety-rated input channel'
+    status: absent
+    result: not_applicable
+  - id: ur-15
+    behaviour: 'Payload and TCP offset configuration round-trip'
+    status: reproduced
+    result: pass
+  - id: ur-16
+    behaviour: 'Freedrive and teach-mode rejection while commanding'
+    status: reproduced
+    result: pass
+  - id: ur-17
+    behaviour: 'Protective-stop notification propagation'
+    status: reproduced
+    result: pass

@@ -1,0 +1,53 @@
+# Conformance checklist, derived clause by clause from the cited vendor
+# document. status: reproduced | simplified | absent.
+# An item passes when the simulator's observable response to a call matches
+# the response the document specifies, in value, in type and in ordering.
+# An 'absent' item is NOT a failure: it records a behaviour that cannot be
+# exercised in simulation at all, and about which this paper therefore makes
+# no claim anywhere.
+interface: abb_rws
+items:
+  - id: abb_rws-01
+    behaviour: 'REST resource paths and HTTP verbs'
+    status: reproduced
+    result: pass
+  - id: abb_rws-02
+    behaviour: 'Digest authentication handshake'
+    status: reproduced
+    result: pass
+  - id: abb_rws-03
+    behaviour: 'Subscription establishment and event payload schema'
+    status: reproduced
+    result: pass
+  - id: abb_rws-04
+    behaviour: 'Controller state and operation mode resources'
+    status: reproduced
+    result: pass
+  - id: abb_rws-05
+    behaviour: 'RAPID symbol read and write typing'
+    status: reproduced
+    result: pass
+  - id: abb_rws-06
+    behaviour: 'Documented HTTP status codes on error'
+    status: reproduced
+    result: pass
+  - id: abb_rws-07
+    behaviour: '125 Hz subscription delivery rate'
+    status: reproduced
+    result: pass
+  - id: abb_rws-08
+    behaviour: 'Session persistence after a controller power cycle'
+    status: simplified
+    result: pass
+  - id: abb_rws-09
+    behaviour: 'Re-homing requirements after restart'
+    status: absent
+    result: not_applicable
+  - id: abb_rws-10
+    behaviour: 'I/O signal read and write typing'
+    status: reproduced
+    result: pass
+  - id: abb_rws-11
+    behaviour: 'Mastership request, hold and release'
+    status: reproduced
+    result: pass

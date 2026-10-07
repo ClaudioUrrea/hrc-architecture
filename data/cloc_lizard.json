@@ -1,0 +1,37 @@
+{
+  "tool": {
+    "cloc": "1.90",
+    "lizard": "1.17.10"
+  },
+  "excluded": [
+    "tests",
+    "generated protocol stubs",
+    "third-party libraries"
+  ],
+  "platform_independent": {
+    "safety_constraints": 2847,
+    "mpc_optimization": 1923,
+    "sensor_fusion": 1654,
+    "api_server": 1215,
+    "configuration_validation": 892,
+    "logging": 743,
+    "total": 9274
+  },
+  "vendor_specific": {
+    "universal_robots": 487,
+    "kuka": 523,
+    "abb": 456
+  },
+  "total_loc": 10740,
+  "reuse": {
+    "all_three_platforms": 0.863,
+    "one_additional_platform": 0.95
+  },
+  "cyclomatic_mean": {
+    "common_core": 4.2,
+    "ur_adapter": 3.8,
+    "kuka_adapter": 3.9,
+    "abb_adapter": 3.7,
+    "safety_constraint_evaluation": 2.1
+  }
+}

@@ -1,0 +1,53 @@
+interface,item_id,behaviour,status,result
+abb_egm,abb_egm-01,UDP sensor-protocol message framing,reproduced,pass
+abb_egm,abb_egm-02,Protobuf field layout for pose and joint targets,reproduced,pass
+abb_egm,abb_egm-03,Sequence number and timestamp semantics,reproduced,pass
+abb_egm,abb_egm-04,Convergence and condition-met reporting,reproduced,pass
+abb_egm,abb_egm-05,250 Hz nominal exchange rate,reproduced,pass
+abb_egm,abb_egm-06,Out-of-range target rejection,reproduced,pass
+abb_egm,abb_egm-07,Controller-side trajectory look-ahead,simplified,pass
+abb_egm,abb_egm-08,Packet loss and reordering behaviour,simplified,pass
+abb_egm,abb_egm-09,Safety-rated speed supervision,absent,not_applicable
+abb_egm,abb_egm-10,Pose and joint mode switching mid-session,reproduced,pass
+abb_egm,abb_egm-11,Ramp-in and ramp-out on activation,reproduced,pass
+abb_rws,abb_rws-01,REST resource paths and HTTP verbs,reproduced,pass
+abb_rws,abb_rws-02,Digest authentication handshake,reproduced,pass
+abb_rws,abb_rws-03,Subscription establishment and event payload schema,reproduced,pass
+abb_rws,abb_rws-04,Controller state and operation mode resources,reproduced,pass
+abb_rws,abb_rws-05,RAPID symbol read and write typing,reproduced,pass
+abb_rws,abb_rws-06,Documented HTTP status codes on error,reproduced,pass
+abb_rws,abb_rws-07,125 Hz subscription delivery rate,reproduced,pass
+abb_rws,abb_rws-08,Session persistence after a controller power cycle,simplified,pass
+abb_rws,abb_rws-09,Re-homing requirements after restart,absent,not_applicable
+abb_rws,abb_rws-10,I/O signal read and write typing,reproduced,pass
+abb_rws,abb_rws-11,"Mastership request, hold and release",reproduced,pass
+kuka,kuka-01,FRI session state machine (MONITORING_WAIT to COMMANDING_ACTIVE),reproduced,pass
+kuka,kuka-02,Quality indicator transitions,reproduced,pass
+kuka,kuka-03,Measured joint position and torque field layout,reproduced,pass
+kuka,kuka-04,Commanded joint position acceptance window,reproduced,pass
+kuka,kuka-05,Nominal 200 Hz send period,reproduced,pass
+kuka,kuka-06,Documented FRI error set,reproduced,pass
+kuka,kuka-07,Overlay motion blending,simplified,pass
+kuka,kuka-08,Connection loss and quality degradation,simplified,pass
+kuka,kuka-09,Dual-channel safety configuration,absent,not_applicable
+kuka,kuka-10,Drive dynamics and brake engagement,absent,not_applicable
+kuka,kuka-11,Joint impedance parameter acceptance,reproduced,pass
+kuka,kuka-12,Cartesian stiffness command range checking,reproduced,pass
+kuka,kuka-13,Timeout on missed command cycle,reproduced,pass
+ur,ur-01,RTDE protocol version negotiation,reproduced,pass
+ur,ur-02,Output recipe setup and field ordering,reproduced,pass
+ur,ur-03,Input recipe write and acknowledgement,reproduced,pass
+ur,ur-04,"Actual TCP pose: units, frame, rotation-vector convention",reproduced,pass
+ur,ur-05,"Joint position, velocity and current field layout",reproduced,pass
+ur,ur-06,Robot mode and safety mode enumerations,reproduced,pass
+ur,ur-07,Runtime state transitions on pause and resume,reproduced,pass
+ur,ur-08,servoj argument range checking and rejection,reproduced,pass
+ur,ur-09,Documented error codes raised and mapped,reproduced,pass
+ur,ur-10,Nominal 125 Hz publication rate at the adapter boundary,reproduced,pass
+ur,ur-11,Transport delay distribution,simplified,pass
+ur,ur-12,Motion-queue back-pressure under sustained servoj,simplified,pass
+ur,ur-13,Reconnection after socket teardown,simplified,pass
+ur,ur-14,Safety-rated input channel,absent,not_applicable
+ur,ur-15,Payload and TCP offset configuration round-trip,reproduced,pass
+ur,ur-16,Freedrive and teach-mode rejection while commanding,reproduced,pass
+ur,ur-17,Protective-stop notification propagation,reproduced,pass

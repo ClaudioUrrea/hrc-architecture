@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+out/
+data/*.parquet
+data/*.npz
+figures/figures_p2_electronics/

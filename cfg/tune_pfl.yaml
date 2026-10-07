@@ -1,0 +1,41 @@
+# Configuration for manuscript electronics-4587969.
+# Every quantity produced by this file is SIMULATED: the robot, sensor and PLC
+# endpoints are vendor software simulators, not physical equipment.
+seed_manifest: config/seeds.json
+platform:
+  os: Ubuntu 22.04.4 LTS
+  kernel: 5.15.0-105 PREEMPT_RT
+  isolcpus: [6, 7]
+  scheduler: {policy: SCHED_FIFO, priority: 90}
+  cpu: Intel Core i7-10700K
+  accelerator: NVIDIA Jetson Xavier NX (JetPack 5.1.2, CUDA 11.4, TensorRT 8.5.2, 15 W 6-core)
+toolchain:
+  compiler: GCC 11.4.0
+  std: c++17
+  flags: [-O2, -march=native]
+  open62541: 1.3.9
+  pymodbus: 3.6.6
+  ethercat_master: IgH 1.5.2
+  qpoases: 3.2.1
+simulators:
+  cell: CoppeliaSim 4.6.0 rev18 (Bullet 2.78, 5 ms step)
+  cameras: 6x Intel RealSense D435 model, 1280x720 @ 30 fps
+
+run:
+  name: tune_pfl
+  description: >-
+    Matched tuning budget for the PFL baseline. Two reviewers
+    objected that the baselines ran at published defaults while the proposed
+    controller had been tuned on this workload; a comparison on those terms
+    measures tuning effort, not method.
+  swept_parameter: 'repulsion gain'
+  values: [0.5, 1.0, 1.5, 2.0, 2.5]
+  selection_rule: >-
+    minimize mean cycle time subject to a minimum separation of at least 150 mm
+  tuning_split_segments: 10      # held out from the 30 comparison segments
+  comparison_segments: 30
+  solver: qpOASES 3.2.1          # identical across every method
+  cycle_budget_ms: 20            # identical across every method
+outputs:
+  grid: data/tuning_grid.parquet
+  selected: data/tuning_selected.json

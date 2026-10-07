@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ablation_cycles",
+  "description": "Ablation per-cycle timing. Column schema for ablation_cycles.parquet, deposit v2.1.0. RECONSTRUCTED data, not instrument recordings (docs/DATA_PROVENANCE.md).",
+  "type": "object",
+  "properties": {
+    "cycle_index": {
+      "description": "int32"
+    },
+    "config": {
+      "description": "dictionary<values=string, indices=int32, ordered=0>"
+    },
+    "seed": {
+      "description": "int16"
+    },
+    "scenario": {
+      "description": "dictionary<values=string, indices=int32, ordered=0>"
+    },
+    "load": {
+      "description": "dictionary<values=string, indices=int32, ordered=0>"
+    },
+    "execution_ms": {
+      "description": "float"
+    },
+    "release_interval_ms": {
+      "description": "float"
+    },
+    "deadline_missed": {
+      "description": "bool"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "conformance_log",
+  "description": "Column schema for conformance_log in the HRC-Architecture deposit v2.1.0.",
+  "type": "object",
+  "properties": {
+    "interface": {
+      "description": "string (ur|kuka|abb_rws|abb_egm)"
+    },
+    "item_id": {
+      "description": "string"
+    },
+    "behaviour": {
+      "description": "string"
+    },
+    "status": {
+      "description": "string (reproduced|simplified|absent)"
+    },
+    "result": {
+      "description": "string (pass|fail|not_applicable)"
+    }
+  },
+  "required": [
+    "interface",
+    "item_id",
+    "behaviour",
+    "status",
+    "result"
+  ]
+}

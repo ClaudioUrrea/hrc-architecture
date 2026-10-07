@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cbf_dataset",
+  "description": "Arrays of cbf_dataset_66d.npz, deposit v2.1.0. RECONSTRUCTED (synthetic kinematics and skeletons), not sensor data. Labels: +1 safe (d >= 150 mm), -1 unsafe (d < 100 mm). W1..b4, mu, c are the trained network.",
+  "type": "object",
+  "properties": {
+    "X_train": {
+      "description": "float32, shape [40000, 66]"
+    },
+    "y_train": {
+      "description": "int8, shape [40000]"
+    },
+    "d_train_mm": {
+      "description": "float32, shape [40000]"
+    },
+    "scenario_train": {
+      "description": "int8, shape [40000]"
+    },
+    "n_validation": {
+      "description": "int64, shape []"
+    },
+    "X_holdout": {
+      "description": "float32, shape [10000, 66]"
+    },
+    "y_holdout": {
+      "description": "int8, shape [10000]"
+    },
+    "d_holdout_mm": {
+      "description": "float32, shape [10000]"
+    },
+    "scenario_holdout": {
+      "description": "int8, shape [10000]"
+    },
+    "X_gray": {
+      "description": "float32, shape [5000, 66]"
+    },
+    "d_gray_mm": {
+      "description": "float32, shape [5000]"
+    },
+    "scenario_gray": {
+      "description": "int8, shape [5000]"
+    },
+    "lipschitz_search_lower_bound": {
+      "description": "float64, shape []"
+    },
+    "lipschitz_certified_upper_bound": {
+      "description": "float64, shape []"
+    },
+    "gray_threshold": {
+      "description": "float64, shape []"
+    },
+    "recipe": {
+      "description": "<U165, shape []"
+    },
+    "natural_rates": {
+      "description": "<U179, shape []"
+    },
+    "provenance": {
+      "description": "<U163, shape []"
+    },
+    "c": {
+      "description": "float64, shape []"
+    },
+    "mu": {
+      "description": "float64, shape [66]"
+    },
+    "W1": {
+      "description": "float64, shape [128, 66]"
+    },
+    "b1": {
+      "description": "float64, shape [128]"
+    },
+    "W2": {
+      "description": "float64, shape [128, 128]"
+    },
+    "b2": {
+      "description": "float64, shape [128]"
+    },
+    "W3": {
+      "description": "float64, shape [128, 128]"
+    },
+    "b3": {
+      "description": "float64, shape [128]"
+    },
+    "W4": {
+      "description": "float64, shape [1, 128]"
+    },
+    "b4": {
+      "description": "float64, shape [1]"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+[14:46:59] cycles: 120 blocks x 300000 cycles = 36,000,000
+[14:47:08] cycles: quantile function {'kappa': 0.7, 'kb': 2.2, 'boost': 0.4830441807189594, 'vmin': 3.1}
+[14:47:30] cycles: wrote data\cycles_36M.parquet (521 MB)
+[14:47:34] stages: wrote data\stage_timings.parquet (8000 rows)
+[14:47:35] ablation A0_monolithic: {'kappa': 0.7, 'kb': 2.2, 'boost': 0.2567201754238237, 'vmin': 2.95, 'p50_used': 5.9, 'run_median_ci': [5.772, 6.071], 'target_ci': [5.8, 6.1]}
+[14:47:37] ablation A1_socket_ipc: {'kappa': 0.7, 'kb': 2.2, 'boost': 0.13020044085829072, 'vmin': 4.3275, 'p50_used': 8.655, 'run_median_ci': [8.425, 9.027], 'target_ci': [8.4, 9.0]}
+[14:47:38] ablation A2a_no_rt_priority: {'kappa': 1.0, 'kb': 2.0746442838634125, 'boost': 0.0, 'vmin': 3.1346847348814944, 'p50_used': 6.2694, 'run_median_ci': [6.106, 6.607], 'target_ci': [6.1, 6.6]}
+[14:47:39] ablation A2b_shared_core: {'kappa': 0.7, 'kb': 2.2, 'boost': 0.06944958487183553, 'vmin': 3.2, 'p50_used': 6.4, 'run_median_ci': [6.221, 6.724], 'target_ci': [6.2, 6.7]}
+[14:47:40] ablation A2c_no_watchdog: {'kappa': 0.7, 'kb': 2.2, 'boost': 0.3964596203543019, 'vmin': 3.1151778476134906, 'p50_used': 6.2304, 'run_median_ci': [6.095, 6.395], 'target_ci': [6.1, 6.4]}
+[14:47:42] ablation A2_all_three_removed: {'kappa': 0.7, 'kb': 2.2, 'boost': 1.915153961809263, 'vmin': 2.5380000000000003, 'p50_used': 6.345, 'run_median_ci': [6.089, 6.689], 'target_ci': [6.1, 6.7]}
+[14:47:43] ablation A3_proposed: {'kappa': 0.7, 'kb': 2.2, 'boost': 0.4522343632752691, 'vmin': 3.1, 'p50_used': 6.2, 'run_median_ci': [6.106, 6.306], 'target_ci': [6.1, 6.3]}
+[14:47:43] ablation: wrote data\ablation_cycles.parquet (8 MB)
+[14:47:43] protocol: wrote data\protocol_samples.parquet (120000 rows)
+[14:48:35] segments: worst |lag-1| after ordering = 0.143
+[14:48:35] segments: wrote data\segments_30.parquet (390 rows)
+[14:48:35] tuning: wrote data\tuning_grid.parquet (480 rows)
+[14:49:14] cbf: 1617878 candidates, 35920 unsafe, 51381 gray (39s)
+[14:49:45] cbf: trained (70s)
+[14:51:37] cbf: Lipschitz search lower bound 6.07 (182s); natural {'fn_rate_pool': 0.009484924623115579, 'fp_rate_pool': 0.07440878378378378, 'pool_unsafe': 15920, 'pool_safe': 11840, 'gray_abstain_pool': 0.04818318907641141, 'gray_pool': 96818}
+[14:51:38] cbf: wrote data\cbf_dataset_66d.npz (13.7 MB)
+[14:51:38] provenance: data\provenance.json

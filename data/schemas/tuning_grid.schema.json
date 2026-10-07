@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "tuning_grid",
+  "description": "Tuning sweep. Column schema for tuning_grid.parquet, deposit v2.1.0. RECONSTRUCTED data, not instrument recordings (docs/DATA_PROVENANCE.md).",
+  "type": "object",
+  "properties": {
+    "baseline": {
+      "description": "string"
+    },
+    "parameter": {
+      "description": "string"
+    },
+    "value": {
+      "description": "double"
+    },
+    "segment_id": {
+      "description": "int16"
+    },
+    "split": {
+      "description": "string"
+    },
+    "cycle_time_s": {
+      "description": "double"
+    },
+    "min_separation_mm": {
+      "description": "double"
+    },
+    "selected": {
+      "description": "bool"
+    }
+  }
+}

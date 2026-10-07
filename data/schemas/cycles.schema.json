@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cycles",
+  "description": "Control-cycle telemetry. Column schema for cycles_36M.parquet, deposit v2.1.0. RECONSTRUCTED data, not instrument recordings (docs/DATA_PROVENANCE.md).",
+  "type": "object",
+  "properties": {
+    "cycle": {
+      "description": "int32"
+    },
+    "block": {
+      "description": "int16"
+    },
+    "t_s": {
+      "description": "double"
+    },
+    "scenario": {
+      "description": "dictionary<values=string, indices=int32, ordered=0>"
+    },
+    "cycle_ms": {
+      "description": "float"
+    },
+    "cbf_ms": {
+      "description": "float"
+    },
+    "qp_ms": {
+      "description": "float"
+    },
+    "dispatch_ms": {
+      "description": "float"
+    },
+    "fusion_ms": {
+      "description": "float"
+    },
+    "sensor_age_ms": {
+      "description": "float"
+    },
+    "deadline_miss": {
+      "description": "bool"
+    },
+    "fallback_step": {
+      "description": "int8"
+    },
+    "qp_retry_ms": {
+      "description": "float"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+# Conformance checklist, derived clause by clause from the cited vendor
+# document. status: reproduced | simplified | absent.
+# An item passes when the simulator's observable response to a call matches
+# the response the document specifies, in value, in type and in ordering.
+# An 'absent' item is NOT a failure: it records a behaviour that cannot be
+# exercised in simulation at all, and about which this paper therefore makes
+# no claim anywhere.
+interface: abb_egm
+items:
+  - id: abb_egm-01
+    behaviour: 'UDP sensor-protocol message framing'
+    status: reproduced
+    result: pass
+  - id: abb_egm-02
+    behaviour: 'Protobuf field layout for pose and joint targets'
+    status: reproduced
+    result: pass
+  - id: abb_egm-03
+    behaviour: 'Sequence number and timestamp semantics'
+    status: reproduced
+    result: pass
+  - id: abb_egm-04
+    behaviour: 'Convergence and condition-met reporting'
+    status: reproduced
+    result: pass
+  - id: abb_egm-05
+    behaviour: '250 Hz nominal exchange rate'
+    status: reproduced
+    result: pass
+  - id: abb_egm-06
+    behaviour: 'Out-of-range target rejection'
+    status: reproduced
+    result: pass
+  - id: abb_egm-07
+    behaviour: 'Controller-side trajectory look-ahead'
+    status: simplified
+    result: pass
+  - id: abb_egm-08
+    behaviour: 'Packet loss and reordering behaviour'
+    status: simplified
+    result: pass
+  - id: abb_egm-09
+    behaviour: 'Safety-rated speed supervision'
+    status: absent
+    result: not_applicable
+  - id: abb_egm-10
+    behaviour: 'Pose and joint mode switching mid-session'
+    status: reproduced
+    result: pass
+  - id: abb_egm-11
+    behaviour: 'Ramp-in and ramp-out on activation'
+    status: reproduced
+    result: pass

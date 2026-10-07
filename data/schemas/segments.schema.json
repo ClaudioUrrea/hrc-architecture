@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "segments",
+  "description": "Segment means. Column schema for segments_30.parquet, deposit v2.1.0. RECONSTRUCTED data, not instrument recordings (docs/DATA_PROVENANCE.md).",
+  "type": "object",
+  "properties": {
+    "segment_id": {
+      "description": "int16"
+    },
+    "scenario": {
+      "description": "string"
+    },
+    "method": {
+      "description": "string"
+    },
+    "parameter_set": {
+      "description": "string"
+    },
+    "cycle_time_s": {
+      "description": "double"
+    },
+    "min_margin_mm": {
+      "description": "double"
+    },
+    "conservatism_learned_pct": {
+      "description": "double"
+    },
+    "conservatism_geometric_pct": {
+      "description": "double"
+    }
+  }
+}

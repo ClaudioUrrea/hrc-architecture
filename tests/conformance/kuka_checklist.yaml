@@ -1,0 +1,61 @@
+# Conformance checklist, derived clause by clause from the cited vendor
+# document. status: reproduced | simplified | absent.
+# An item passes when the simulator's observable response to a call matches
+# the response the document specifies, in value, in type and in ordering.
+# An 'absent' item is NOT a failure: it records a behaviour that cannot be
+# exercised in simulation at all, and about which this paper therefore makes
+# no claim anywhere.
+interface: kuka
+items:
+  - id: kuka-01
+    behaviour: 'FRI session state machine (MONITORING_WAIT to COMMANDING_ACTIVE)'
+    status: reproduced
+    result: pass
+  - id: kuka-02
+    behaviour: 'Quality indicator transitions'
+    status: reproduced
+    result: pass
+  - id: kuka-03
+    behaviour: 'Measured joint position and torque field layout'
+    status: reproduced
+    result: pass
+  - id: kuka-04
+    behaviour: 'Commanded joint position acceptance window'
+    status: reproduced
+    result: pass
+  - id: kuka-05
+    behaviour: 'Nominal 200 Hz send period'
+    status: reproduced
+    result: pass
+  - id: kuka-06
+    behaviour: 'Documented FRI error set'
+    status: reproduced
+    result: pass
+  - id: kuka-07
+    behaviour: 'Overlay motion blending'
+    status: simplified
+    result: pass
+  - id: kuka-08
+    behaviour: 'Connection loss and quality degradation'
+    status: simplified
+    result: pass
+  - id: kuka-09
+    behaviour: 'Dual-channel safety configuration'
+    status: absent
+    result: not_applicable
+  - id: kuka-10
+    behaviour: 'Drive dynamics and brake engagement'
+    status: absent
+    result: not_applicable
+  - id: kuka-11
+    behaviour: 'Joint impedance parameter acceptance'
+    status: reproduced
+    result: pass
+  - id: kuka-12
+    behaviour: 'Cartesian stiffness command range checking'
+    status: reproduced
+    result: pass
+  - id: kuka-13
+    behaviour: 'Timeout on missed command cycle'
+    status: reproduced
+    result: pass
