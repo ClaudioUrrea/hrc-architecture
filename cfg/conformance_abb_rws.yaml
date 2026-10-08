@@ -25,12 +25,12 @@ run:
   name: conformance_abb_rws
   description: >-
     Clause-by-clause conformance checklist for the ABB Robot Web Services adapter,
-    derived from ABB 3HAC073675-001 Rev. F. An item passes when the simulator's observable response
+    derived from ABB Robot Web Services 2.0 (OmniCore, RobotWare 7). An item passes when the simulator's observable response
     to a call matches the response the document specifies, in value, in type and
     in ordering.
   vendor: ABB
   interface: Robot Web Services
-  document: 'ABB 3HAC073675-001 Rev. F'
+  document: 'ABB Robot Web Services 2.0 (OmniCore, RobotWare 7)'
   nominal_state_rate_hz: 125
   checklist: tests/conformance/abb_rws_checklist.yaml
   # Stated so it cannot be read as more than it is: simulator and adapter were

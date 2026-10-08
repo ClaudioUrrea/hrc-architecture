@@ -26,9 +26,9 @@ VENDOR_DOCUMENTS = {
  "kuka":             {"interface": "Fast Robot Interface (FRI)",
                       "document": "KUKA FRI manual", "state_rate_hz": 200},
  "abb_rws":          {"interface": "Robot Web Services",
-                      "document": "ABB 3HAC073675-001 Rev. F", "state_rate_hz": 125},
+                      "document": "ABB Robot Web Services 2.0 (OmniCore, RobotWare 7)", "state_rate_hz": 125},
  "abb_egm":          {"interface": "Externally Guided Motion",
-                      "document": "ABB 3HAC066554-001 Rev. M", "state_rate_hz": 250},
+                      "document": "ABB 3HAC073318-001 Rev. H", "state_rate_hz": 250},
 }
 
 # status: reproduced | simplified | absent

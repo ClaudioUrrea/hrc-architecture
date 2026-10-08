@@ -25,12 +25,12 @@ run:
   name: conformance_abb_egm
   description: >-
     Clause-by-clause conformance checklist for the ABB Externally Guided Motion adapter,
-    derived from ABB 3HAC066554-001 Rev. M. An item passes when the simulator's observable response
+    derived from ABB 3HAC073318-001 Rev. H. An item passes when the simulator's observable response
     to a call matches the response the document specifies, in value, in type and
     in ordering.
   vendor: ABB
   interface: Externally Guided Motion
-  document: 'ABB 3HAC066554-001 Rev. M'
+  document: 'ABB 3HAC073318-001 Rev. H'
   nominal_state_rate_hz: 250
   checklist: tests/conformance/abb_egm_checklist.yaml
   # Stated so it cannot be read as more than it is: simulator and adapter were
