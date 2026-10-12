@@ -132,7 +132,7 @@ bool solve_small(int q, double G[kMaxDof][kMaxDof], const double* rhs, double* o
   for (int c = 0; c < q; ++c) {
     int piv = c;
     for (int r = c + 1; r < q; ++r) if (std::fabs(A[r][c]) > std::fabs(A[piv][c])) piv = r;
-    if (std::fabs(A[piv][c]) < 1e-12) return false;
+    if (std::fabs(A[piv][c]) < 1e-10) return false;
     if (piv != c) for (int j = 0; j <= q; ++j) std::swap(A[c][j], A[piv][j]);
     for (int r = 0; r < q; ++r) {
       if (r == c) continue;
@@ -167,6 +167,18 @@ QpResult QpFilter::solve(const Joints& qd_nom, const Joints& qd_max, const Const
     b[m] = -qd_max[j];      // -x_j >= -max
     b[m + 1] = -qd_max[j];  //  x_j >= -max
     m += 2;
+  }
+  // Normalise every row to unit length so that all tolerances below are scale-free. Rows of the
+  // learned barrier can have gradients of a few 1e-2 and be nearly parallel to a geometric row;
+  // with raw rows the active-set Gram matrix is then numerically singular.
+  for (int i = 0; i < m; ++i) {
+    double nn = 0;
+    for (int j = 0; j < n; ++j) nn += C[i][j] * C[i][j];
+    nn = std::sqrt(nn);
+    if (nn > 1e-9) {
+      for (int j = 0; j < n; ++j) C[i][j] /= nn;
+      b[i] /= nn;
+    }
   }
   double x[kMaxDof];
   for (int j = 0; j < n; ++j) x[j] = qd_nom[j];
@@ -216,7 +228,7 @@ QpResult QpFilter::solve(const Joints& qd_nom, const Joints& qd_max, const Const
       int k = -1;
       for (int a = 0; a < q; ++a)
         if (r[a] > 1e-12 && u[a] / r[a] < t1) { t1 = u[a] / r[a]; k = a; }
-      const double t2 = zz > 1e-14 ? -slack(p) / zz : 1e300;
+      const double t2 = zz > 1e-10 ? -slack(p) / zz : 1e300;
       const double t = std::min(t1, t2);
       if (t >= 1e299) { infeasible = true; break; }
       if (t2 < 1e299) for (int j = 0; j < n; ++j) x[j] += t * z[j];
