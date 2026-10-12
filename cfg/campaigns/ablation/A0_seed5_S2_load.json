@@ -35,12 +35,12 @@
   "control": {
     "period_ms": 20,
     "strategy": "proposed",
-    "kappa": 4.0,
+    "kappa": 8.0,
     "geo_rows": 6,
     "stop_decel_joint": 3.0,
     "motion": {
       "model": "bound",
-      "v_bound": 1.0,
+      "v_bound": 0.6,
       "v_max": 2.0,
       "v_margin": 0.3
     },
@@ -86,7 +86,7 @@
   "human": {
     "scenario": "screwdriving",
     "cycle_s": 25,
-    "shared_zone_x": 0.55
+    "shared_zone_x": 0.8
   },
   "task": {
     "waypoints": [
