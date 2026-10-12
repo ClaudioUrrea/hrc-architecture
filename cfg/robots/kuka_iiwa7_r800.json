@@ -1,0 +1,12 @@
+{
+  "model": "KUKA LBR iiwa 7 R800",
+  "source": "Standard DH from the LBR iiwa 7 R800 dimensions (link offsets 0.340, 0.400, 0.400, 0.126 m); verify against the KUKA spec sheet of the unit used",
+  "dof": 7,
+  "a":     [0, 0, 0, 0, 0, 0, 0],
+  "d":     [0.340, 0.0, 0.400, 0.0, 0.400, 0.0, 0.126],
+  "alpha": [-1.5707963267948966, 1.5707963267948966, 1.5707963267948966, -1.5707963267948966, -1.5707963267948966, 1.5707963267948966, 0.0],
+  "theta_offset": [0, 0, 0, 0, 0, 0, 0],
+  "link_radius": 0.07,
+  "samples_per_link": 4,
+  "base": [0.0, 0.0, 0.0]
+}
