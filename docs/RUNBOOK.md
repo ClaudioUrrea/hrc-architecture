@@ -3,6 +3,25 @@
 Every step below produces raw files written by software; none produces numbers by hand.
 Times are wall-clock estimates for the default campaign sizes.
 
+## As executed for the article
+
+This runbook is the procedure written before the campaigns. The campaigns of the article
+followed it with these differences, which the article reports in its Section 5.8:
+
+* **Host.** One workstation (Intel Core i7-12700, 32 GB) running Ubuntu 22.04 under WSL2 with
+  the general-purpose `PREEMPT_DYNAMIC` kernel. No PREEMPT_RT kernel, no isolated CPUs, and
+  `sched_rt_runtime_us` at its default (section 1 was not applied). `SCHED_FIFO` priority 90,
+  CPU affinity and locked memory were requested and obtained in every run.
+* **Robot.** Every campaign used the built-in kinematic UR5e model. URSim was used only for
+  the conformance test (section 6); the URSim timing variant was not run.
+* **Not executed:** KUKA and ABB conformance, the remote-inference variant, PLC commissioning
+  timing and porting-effort logs (section 9). No result is reported for them.
+* **Sizes.** Full design sizes: timing 120 blocks of 100 min, tuning segments of 20 min,
+  comparison 120 runs of 20 min.
+
+The frozen configurations are at tag `campaign-v3`, the comparison configurations at
+`campaign-v3-compare`, and the code that generated `results.json` at `campaign-v3-report`.
+
 ## 0. Machines
 
 | Role | Requirement | Used for |

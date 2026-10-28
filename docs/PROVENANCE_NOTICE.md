@@ -1,9 +1,8 @@
-# Correction notice for the existing deposits
+# Correction notice for the earlier deposits
 
-Publish this text **now**, before anything else, at the top of the description of the Figshare
-item 10.6084/m9.figshare.33194013 (as a metadata edit or a new version) and at the top of the
-README of github.com/ClaudioUrrea/hrc-architecture. It replaces the provenance paragraphs that
-describe some files as "recorded values".
+This notice applies to releases 1.0.0–2.1.0 of this repository and to versions 1.0.0–2.1.0 of
+Figshare item 10.6084/m9.figshare.33194013. It replaces the provenance paragraphs that described
+some of their files as "recorded values".
 
 ---
 
@@ -27,16 +26,3 @@ The author has informed the journal. The implementation is being rebuilt
 with raw logs deposited as written by the software, with SHA-256 manifests. Any future
 publication will report only results from those new runs. Earlier versions of this item remain
 retrievable under their version DOIs so that the history is auditable.
-
----
-
-## Additional notes for the author
-
-* Do **not** publish the planned Figshare v2.1.0 update (the `figshare_deposit` folder with
-  the regenerated manifest): it would re-publish the same synthetic files with the old
-  description.
-* In the GitHub repository, keep the history; add the notice above to README.md and to the
-  release notes of the latest release, and mark the release as superseded.
-* The companion manuscripts that the paper says report the same figures (4.5 ms sensor
-  fusion, 3.5 s mean recovery, 1.8 ms barrier inference) depend on the same lost campaign.
-  The same disclosure applies to them.

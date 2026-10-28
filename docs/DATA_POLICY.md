@@ -31,12 +31,8 @@ anything. The rules below make sure it cannot happen again.
 
 * Every run is mirrored at close to every `--backup` directory and verified hash by hash.
   `tools/run_campaign.py` refuses to start without a backup and stops if verification fails.
-* Recommended: one external disk + one cloud-synchronised folder, plus a weekly archive
-  (`tar` of `runs/` with its SHA-256) uploaded to Figshare as a *private* item while the
-  campaign runs.
-* The source tree is under git; push to GitHub after every change. Each run manifest records
-  the commit it was built from (a `-dirty` suffix means uncommitted changes: do not use such
-  runs for the paper).
+* The source tree is under git. Each run manifest records the commit it was built from (a
+  `-dirty` suffix means uncommitted changes: such runs are not used for the paper).
 
 ## 4. Pre-registration
 
