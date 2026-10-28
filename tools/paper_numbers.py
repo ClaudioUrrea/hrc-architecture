@@ -72,7 +72,8 @@ def main():
     print(f"% generated from {src} sha256 {hashlib.sha256(src.read_bytes()).hexdigest()}")
     print(r"\providecommand{\missingnum}{\textcolor{red}{??}}")
     for k, v in sorted(out.items()):
-        print(f"\\newcommand{{\\{k}}}{{{v if v is not None else r'\missingnum'}}}")
+        val = v if v is not None else r"\missingnum"
+        print(f"\\newcommand{{\\{k}}}{{{val}}}")
 
 
 if __name__ == "__main__":
