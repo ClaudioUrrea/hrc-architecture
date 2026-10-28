@@ -1,0 +1,12 @@
+{
+  "model": "UR5e",
+  "source": "Universal Robots, DH parameters for calculations of kinematics and dynamics (UR5e)",
+  "dof": 6,
+  "a":     [0.0, -0.425, -0.3922, 0.0, 0.0, 0.0],
+  "d":     [0.1625, 0.0, 0.0, 0.1333, 0.0997, 0.0996],
+  "alpha": [1.5707963267948966, 0.0, 0.0, 1.5707963267948966, -1.5707963267948966, 0.0],
+  "theta_offset": [0, 0, 0, 0, 0, 0],
+  "link_radius": 0.06,
+  "samples_per_link": 4,
+  "base": [0.0, 0.0, 0.0]
+}

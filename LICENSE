@@ -19,8 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-SAFETY NOTICE. This software has not been assessed against IEC 61508, ISO
-13849, ISO 10218 or ISO/TS 15066. No Safety Integrity Level and no Performance
-Level is claimed. It was evaluated only against simulated interfaces. Do not
-deploy it on machinery that can reach a person.

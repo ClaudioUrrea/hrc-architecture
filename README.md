@@ -1,119 +1,64 @@
-> [!WARNING]
-> **Correction of data provenance (12 October 2026).** The data files in releases 1.0.0 to 2.1.0
-> of this repository and of the Figshare deposit [doi:10.6084/m9.figshare.33194013](https://doi.org/10.6084/m9.figshare.33194013)
-> are **not experimental records**. The original logs and the implementation source code of the study
-> described in manuscript electronics-4587969 (MDPI *Electronics*) were lost, and no backup exists.
-> The deposited datasets – including those previously described as "recorded values"
-> (`faults_450.csv`, `interfailure.csv`, `plc_runs.csv`, `effort_log.csv`, `conformance_log.csv`,
-> `cloc_lizard.json`) and the files described as "reference reconstructions" – were reconstructed
-> from the summary statistics printed in the manuscript. They cannot be
-> used to verify that manuscript and must not be used as evidence for its results. The analysis
-> scripts in those releases recompute the printed numbers from the reconstructed files; this shows
-> internal consistency only. These releases also did not contain the C++ implementation described in
-> the manuscript's Data Availability Statement.
->
-> The author has informed the journal. The implementation is being rebuilt (release 3.x) and the
-> experiments are being repeated with raw logs written by the software, with SHA-256 manifests. The
-> source code and analysis scripts of the re-implementation are written with the assistance of an AI
-> coding assistant (Claude, Anthropic) from the author's specifications; the author defined the
-> architecture and the experimental design, reviews and tests the code, and is fully responsible for
-> it. The AI generates no data: all results come from running the software. Any
-> future publication will report only results from those new runs. The history of this repository is
-> kept unchanged so that it remains auditable.
+# hrc-architecture 3.x
 
-# hrc-architecture
+Vendor-neutral embedded control architecture for human–robot collaboration: hardware
+abstraction (Universal Robots RTDE, KUKA FRI, ABB EGM/RWS), a bounded-latency control layer
+with geometric and learned control barrier functions, a safety supervisor, and an integration
+layer (Modbus TCP, REST, OPC-UA).
 
-> **Data provenance.** See the correction notice at the top of this page: none of the deposited data files is an experimental record; all of them, including those previously described as recorded values, were reconstructed from the summary statistics reported in the paper.
+> **Read first — provenance.** Release 3.x is a re-implementation. The code and the original
+> records of the study reported in manuscript electronics-4587969 (MDPI *Electronics*) were
+> lost, and the data files deposited with releases 1.0.0–2.1.0 were generated from the
+> manuscript's own summary statistics; they are not experimental records
+> (`docs/PROVENANCE_NOTICE.md`). Release 3.x contains no data generated that way. Every
+> result is to be produced by the programs below, which write raw, hash-manifested run
+> directories (`docs/DATA_POLICY.md`).
 
-Reference implementation and reproducibility package for
-
-> C. Urrea, *Vendor-Neutral Embedded Control Architecture for Safety-Critical Human–Robot
-> Collaboration: Hardware Abstraction, Bounded-Latency Execution and Industrial Protocol
-> Integration Evaluated Against Simulated Vendor Interfaces*, **Electronics** (under review),
-> manuscript `electronics-4587969`.
-
-A three-layer embedded control architecture for collaborative robot cells. A hardware
-abstraction layer places URScript/RTDE, KUKA FRI and ABB Robot Web Services behind one set of
-interfaces; a real-time control layer runs a Lipschitz-constrained neural control barrier
-function under TensorRT inside a 20 ms budget; an integration layer publishes an IEC 62541
-OPC-UA server, a Modbus TCP gateway and an EtherCAT master.
-
-## Read this first
-
-**Every number in the paper was produced by this software executing against *simulated* robot,
-sensor and PLC interfaces.** No physical manipulator, no safety-rated hardware, no industrial
-network and no human participant was involved at any stage. Nothing here has been assessed
-against IEC 61508, ISO 13849, ISO 10218 or ISO/TS 15066, no Safety Integrity Level or
-Performance Level is claimed, and **this code must not be deployed on a robot that can reach a
-person**. Sections 3.1 and 3.4 and Tables 3 and 4 of the paper classify every reported quantity as measured,
-simulated, estimated or projected, and state what limits its transferability.
+**This software must not be connected to a robot that can reach a person.** It has not been
+assessed against IEC 61508, ISO 13849, ISO 10218 or ISO/TS 15066, and the emergency stop it
+issues is not a safety-rated function.
 
 ## Layout
 
 ```
-cfg/          run configurations, one per reported experiment
-config/       seeds.json — master seed and every derived per-scenario seed
-analysis/     one script per figure or table in the paper
-train/        CBF training and evaluation
-data/         deposited measurements (see data/README.md for schemas)
-api/          OpenAPI 3.0 specification of the REST layer
-sbom/         SPDX software bill of materials
-docs/         REPRODUCE.md — end-to-end instructions
-tests/        conformance/ — clause-by-clause vendor-interface checklists and logs
-figures/      p2_figures.py — regenerates all thirteen figures
-              ga_p2_electronics.py — regenerates the graphical abstract
+include/hrc/      interfaces (contracts), types, safety, supervisor, adapters, logging
+src/              implementation: safety/, control/, adapters/, sim/, integration/, faults/, log/
+apps/             hrc_run (experiments), hrc_conformance, hrc_protocol_bench, hrc_infer_server
+tests/            test_safety_isolated (links no vendor/sim/protocol code), test_system
+train/            barrier-network training (NumPy)
+cfg/              base configuration, robot DH files, fault-rate rationale, generated campaigns
+tools/            make_campaigns.py, run_campaign.py, worklog.py, code_metrics.sh
+analysis/         readers that verify hashes, and one script per reported result; report.py
+docs/             RUNBOOK, DATA_POLICY, DESIGN_DECISIONS, REVIEWER2_R3_MAP, PROVENANCE_NOTICE
 ```
+
+## Build
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j
+cd build && ctest --output-on-failure
+```
+C++17, no third-party dependency for the core. Optional: KUKA FRI SDK, ABB `egm.proto`
+(protobuf), open62541.
+
+## One run
+
+```bash
+python3 train/train_cbf.py --run-root runs              # trains and exports the barrier
+cp runs/*_cbf_train/model.json models/cbf_ur5e.json
+./build/hrc_run --config cfg/base_sim_ur5e.json --duration 60 --backup /path/to/backup
+```
+A run directory contains `config.json`, `manifest.json` (host, kernel, RT settings actually
+applied, build commit), `schema.json`, `cycles.bin` (one 192-byte record per control cycle),
+`events.jsonl`, `injection_schedule.csv` and `MANIFEST.sha256`. It is made read-only at close
+and mirrored to every backup directory with hash verification.
 
 ## Reproducing the paper
 
-```bash
-docker build -t hrc-arch .
-docker run --rm -v "$PWD/out:/work/out" hrc-arch make all
-```
+`docs/RUNBOOK.md`: real-time host set-up, pilot and freeze, training, URSim conformance, the
+campaigns (`tools/make_campaigns.py`, `tools/run_campaign.py`), PLC and effort timing
+(`tools/worklog.py`), and `analysis/report.py`, which writes `results/results.json` with the
+run directories (and their manifest hashes) behind every number.
 
-or, natively:
+## License
 
-```bash
-python -m pip install -r requirements.txt
-make all
-```
-
-`make all` runs every script in `analysis/`, writes the numbers quoted in the paper to
-`out/results.json`, and regenerates the thirteen figures into `out/figures/`. `make check`
-asserts that each recomputed value matches the value printed in the paper; it exits non-zero
-if any disagrees. Table 6 of the paper maps each result to the configuration, script and data
-file that produce it, and `docs/REPRODUCE.md` repeats that mapping here.
-
-## What this release withdrew
-
-Release 2.1.0 accompanies the revised manuscript (major revision, round 1). The withdrawals below took effect at 2.0.0 and remain in force. Three claims present in 1.x are **withdrawn**,
-and `make check` now asserts that they stay withdrawn:
-
-- the per-cycle deadline-miss bound of 8.3 × 10⁻⁸ — it treated 3.6 × 10⁷ dependent cycles as
-  independent trials; the bound is now stated only at the block grain (no miss in 120
-  cold-started 100-minute blocks, so 3/120 = 2.5 × 10⁻²);
-- the claim that the layering improves the latency tail — the monolithic baseline holds the
-  lowest observed maximum of the seven ablation configurations;
-- the cycle-time advantage over distributed MPC and over a single-objective barrier controller
-  — it does not survive giving those baselines a matched tuning budget.
-
-Two published quantities were also corrected: the ablation's dispersion column (0.15 ms was
-release jitter, not execution-time spread, which is 1.71 ms) and the availability figure, which
-no longer borrows the injection campaign's recovery mean. `CHANGELOG.md` records each against
-the version in which it took effect.
-
-## What is *not* in this repository
-
-- Vendor software development kits. URScript/RTDE, KUKA Sunrise/FRI and ABB RWS/EGM must be
-  obtained from the manufacturers under their own licence terms; the adapters build against
-  them but do not redistribute them.
-- The vendor simulators (URSim, Sunrise.OS, RobotStudio, PLCSIM Advanced, Studio 5000 Logix
-  Emulate, GX Simulator3) and CoppeliaSim, for the same reason.
-- The two largest telemetry files (`cycles_36M.parquet`, `ablation_cycles.parquet`). They are
-  in the Figshare deposit, DOI [10.6084/m9.figshare.33194013](https://doi.org/10.6084/m9.figshare.33194013);
-  `make fetch-data` downloads them.
-
-## Licence
-
-Code: MIT (`LICENSE`). Data and figures: CC BY 4.0 (`LICENSE-DATA`). See `CITATION.cff` for how
-to cite.
+MIT (code). Data deposited from runs: CC BY 4.0.
