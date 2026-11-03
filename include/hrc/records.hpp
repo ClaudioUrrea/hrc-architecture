@@ -8,7 +8,8 @@
 namespace hrc {
 
 enum CycleFlag : uint16_t {
-  kFlagOverrun = 1u << 0,           // cycle execution exceeded the deadline
+  kFlagOverrun = 1u << 0,           // record completed after the deadline (3.1: the deadline counted in the
+                                    // run summary and seen by the supervisor is judged at enqueue completion)
   kFlagInjectedOverrun = 1u << 1,   // an overrun was injected into this cycle by the fault injector
   kFlagQpRelaxed = 1u << 2,         // learned rows dropped, geometric rows kept, re-solved
   kFlagQpFailed = 1u << 3,          // geometric-only problem infeasible -> stop command
@@ -18,14 +19,19 @@ enum CycleFlag : uint16_t {
   kFlagStopCommanded = 1u << 7,
   kFlagRemoteInference = 1u << 8,   // barrier evaluated on the remote inference server
   kFlagRemoteTimeout = 1u << 9,
+  // release 3.1
+  kFlagLimitConflict = 1u << 10,    // barrier rows feasible at full speed but not within the speed limits -> stop
+  kFlagSsmReduced = 1u << 11,       // the SSM speed limit reduced the command (QP re-solved, rows kept)
+  kFlagFinalCheckFailed = 1u << 12, // dispatched command failed the final row/box/SSM check -> stop
 };
 
 #pragma pack(push, 1)
-struct CycleRecord {           // 192 bytes
+struct CycleRecord {           // 208 bytes (192 in release 3.0)
   uint64_t idx;                // cycle index within the run
   int64_t t_release_ns;        // planned release (absolute, CLOCK_MONOTONIC)
   int64_t t_wake_ns;           // actual wake-up
-  int64_t t_end_ns;            // command written to the outbound path
+  int64_t t_end_ns;            // record complete, immediately before it is enqueued to the logger;
+                               // execution time = t_end_ns - t_wake_ns + d_enqueue_prev_ns of the NEXT record
   int32_t d_state_ns;          // read robot state + human estimate
   int32_t d_nominal_ns;        // nominal controller
   int32_t d_geo_ns;            // geometric barrier rows
@@ -50,10 +56,22 @@ struct CycleRecord {           // 192 bytes
   float q[7];                  // measured joint positions used this cycle (rad)
   float qd_cmd[7];             // commanded joint velocities (rad/s), 0 when stopping
   float closest_kp[3];         // position of the keypoint closest to the robot (m, cell frame)
-  uint8_t pad[22];
+  // ---- release 3.1
+  float gt_min_sep_m;          // ground-truth separation (simulator robot state + scripted human), NaN if unavailable
+  float est_err_max_m;         // largest keypoint error of the estimate used vs ground truth at its observation time
+  float final_viol;            // largest violation of the dispatched command: barrier rows (normalised, m/s),
+                               // joint box (rad/s) and SSM link speed (m/s); 0 if a stop was decided earlier.
+                               // > 1e-6 only together with kFlagFinalCheckFailed (the command was then replaced by a stop)
+  float v_ssm_ok;              // SSM speed limit this cycle (m/s), -1 if SSM inactive
+  float qd_meas_norm;          // |measured joint velocity| (rad/s): distinguishes deceleration from standstill
+  int32_t d_enqueue_prev_ns;   // duration of the logger enqueue of the PREVIOUS cycle (-1 for idx 0)
+  uint8_t cond_mask;           // supervisor conditions active this cycle (bit k <=> condition of mode k)
+  float gt_age_ms;             // age of the ground-truth sample at dispatch (probe thread, 250 Hz), NaN if none
+  float est_err_closest_m;     // error of the estimate's keypoint closest to the robot vs ground truth at its observation time
+  uint8_t pad[5];
 };
 #pragma pack(pop)
-static_assert(sizeof(CycleRecord) == 192, "CycleRecord must stay 192 bytes");
+static_assert(sizeof(CycleRecord) == 208, "CycleRecord layout changed: update schema_json() and the analysis");
 
 enum class EventKind : uint8_t {
   Info = 0,

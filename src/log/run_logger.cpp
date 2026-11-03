@@ -99,6 +99,15 @@ static std::string schema_json() {
       {"qp_iters", "u1", offsetof(CycleRecord, qp_iters)},
       {"qp_rows", "u1", offsetof(CycleRecord, qp_rows)},
       {"streams_alive", "u1", offsetof(CycleRecord, streams_alive)},
+      {"gt_min_sep_m", "f4", offsetof(CycleRecord, gt_min_sep_m)},
+      {"est_err_max_m", "f4", offsetof(CycleRecord, est_err_max_m)},
+      {"final_viol", "f4", offsetof(CycleRecord, final_viol)},
+      {"v_ssm_ok", "f4", offsetof(CycleRecord, v_ssm_ok)},
+      {"qd_meas_norm", "f4", offsetof(CycleRecord, qd_meas_norm)},
+      {"d_enqueue_prev_ns", "i4", offsetof(CycleRecord, d_enqueue_prev_ns)},
+      {"cond_mask", "u1", offsetof(CycleRecord, cond_mask)},
+      {"gt_age_ms", "f4", offsetof(CycleRecord, gt_age_ms)},
+      {"est_err_closest_m", "f4", offsetof(CycleRecord, est_err_closest_m)},
   };
   struct A { const char* n; size_t off; int count; };
   const A arrays[] = {{"q", offsetof(CycleRecord, q), 7}, {"qd_cmd", offsetof(CycleRecord, qd_cmd), 7},

@@ -33,6 +33,9 @@ struct GeometricCbfParams {
   double kappa = 2.0;          // class-K gain (1/s)
   int max_rows = 6;            // closest (link point, keypoint) pairs turned into rows
   double min_keypoint_conf = 0.2;
+  // 3.1: margin for the error of the estimated keypoint position (m), subtracted from every
+  // barrier value. 0 reproduces release 3.0 (no position-uncertainty term in the barrier).
+  double position_margin = 0.0;
   HumanMotionModel motion;
 };
 
@@ -44,6 +47,9 @@ class GeometricCbf final : public ISafetyConstraint {
   double margin() const override { return p_.r_safety; }
   bool isTrustworthy() const override { return true; }
   void set_floor(double r) { p_.r_safety = r; }
+  // Re-expresses rows already evaluated in `cs` for a new separation floor (h and rhs are affine
+  // in the floor), so a floor raised by the supervisor in this cycle applies in this cycle.
+  void retighten(ConstraintSet& cs, double new_floor);
   double floor() const { return p_.r_safety; }
   double last_min_separation() const { return last_min_sep_; }  // surface-to-keypoint distance (m)
   Vec3 last_closest_keypoint() const { return last_kp_; }
@@ -176,5 +182,32 @@ class QpFilter {
   QpResult solve(const Joints& qd_nom, const Joints& qd_max, const ConstraintSet* const* sets, int nsets,
                  Joints& qd_out, int max_iters = 200, double tol = 1e-7);
 };
+
+// ---------------------------------------------------------------------------- limited safety filter (3.1)
+// The barrier QP with EVERY speed limit inside the problem, so the dispatched command is a QP
+// solution and satisfies every active barrier row (src/safety/limited_filter.cpp):
+//   * supervisor speed scale s_mode: box s_mode*qd_max and nominal s_mode*qd_nom;
+//   * SSM link-speed limit v_ok (ISO/TS 15066 5.5.4), if v_ok >= 0: when the solution's largest
+//     link-point speed exceeds v_ok, the envelope fraction sigma is backed off (3.0 ratio
+//     sigma*v_ok/v, then halved, finally 0) and the QP RE-SOLVED each time; never scaled afterwards;
+//   * learned rows that make the problem infeasible are dropped (geometric rows kept), as in 3.0;
+//   * explicit outcomes when the rows cannot be met: qp_failed (infeasible even at full speed) or
+//     limit_conflict (feasible at full speed, not within the speed limits) -> stop.
+// Release 3.0 multiplied the QP solution by s_mode and the SSM ratio after solving, which can
+// violate a row with rhs > 0 (Reviewer 2, round 4).
+struct LimitedFilterResult {
+  bool stop = false;
+  bool relaxed = false, qp_failed = false, limit_conflict = false, ssm_reduced = false;
+  double sigma = 0;   // envelope fraction used (0 when stopped)
+  int iters = 0;
+};
+LimitedFilterResult limited_filter(QpFilter& qp, const GeometricCbf& geo, const Joints& qd_nom, const Joints& qd_max,
+                                   double s_mode, double v_ok, const ConstraintSet* geo_rows,
+                                   const ConstraintSet* learned_rows, Joints& qd_out);
+// Largest violation of a command: rows (normalised, m/s), box s_mode*qd_max (rad/s) and, if v_ok >= 0,
+// SSM link speed (m/s). <= 1e-6 means the command satisfies every limit. Used as the final check
+// of the command actually dispatched, for every strategy.
+double command_violation(const GeometricCbf& geo, const Joints& qd, const Joints& qd_max, double s_mode, double v_ok,
+                         const ConstraintSet* const* sets, int nsets);
 
 }  // namespace hrc

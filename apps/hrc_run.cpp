@@ -50,6 +50,18 @@ std::string usage() {
          "[--run-root DIR] [--notes TEXT]\n";
 }
 
+// Evaluation-only ground truth (3.1), written by a probe thread on the auxiliary core and read
+// by the control loop when it builds the cycle record. Never used for control.
+struct GtSample {
+  static constexpr int kRing = 8;
+  int64_t t_gt_ns = 0;          // when the ground-truth separation was evaluated
+  double sep = NAN;             // simulator robot state vs scripted human keypoints (m)
+  int head = 0;
+  int64_t t_obs[kRing] = {};    // observation times of the last fused estimates
+  double err[kRing] = {};       // their largest keypoint error vs ground truth at that time (m)
+  double err_closest[kRing] = {};  // error of their keypoint closest to the robot (m)
+};
+
 struct LoopContext {
   // configuration
   int64_t period_ns = 20'000'000;
@@ -73,6 +85,7 @@ struct LoopContext {
   EventChannel* ev = nullptr;
   IntegrationBus* bus = nullptr;
   InjectionTargets* inj = nullptr;
+  const SeqlockSlot<GtSample>* gt = nullptr;
   int streams_total = 0;
   // shared with other threads
   std::atomic<int64_t> heartbeat_ns{0};
@@ -97,6 +110,8 @@ void control_loop(LoopContext& c, RobotT& robot) {
   qd_nom.n = qd_cmd.n = qd_tmp.n = c.qd_max.n;
   ConstraintSet gset, lset;
   bool prev_overrun = false, qp_relaxed_prev = false, learned_failed_prev = false;
+  bool ctrl_stop_prev = false;      // a controller-level stop (QP infeasible, limit conflict, final check) was active
+  int32_t d_enqueue_prev = -1;      // enqueue duration of the previous record (logged in the next one)
   double last_override = -1;
   int64_t last_state_ns = 0;
   uint32_t last_state_seq = 0;
@@ -161,6 +176,8 @@ void control_loop(LoopContext& c, RobotT& robot) {
     if (c.ack_request.exchange(false)) c.sup->acknowledge(t3);
     const Mode mode = c.sup->update(in);
     c.mode = static_cast<int>(mode);
+    // 3.1: a floor raised by this update applies to this cycle's rows (3.0 applied it one cycle later)
+    c.geo->retighten(gset, c.sup->floor());
 
     // ---------------------------------------------------------------- learned barrier
     bool learned_used = false;
@@ -185,49 +202,63 @@ void control_loop(LoopContext& c, RobotT& robot) {
     }
 
     // ---------------------------------------------------------------- safety strategy
+    // Release 3.1. Every limit that applies to the command is enforced INSIDE the QP, so the
+    // dispatched command is the QP solution itself and satisfies every active barrier row:
+    //   * supervisor speed scale s (composed over active conditions): box sigma*qd_max and
+    //     nominal sigma*qd_nom with sigma = s;
+    //   * SSM speed limit v_ok (ISO/TS 15066 5.5.4): if the solution's largest link-point speed
+    //     exceeds v_ok, sigma is reduced and the QP RE-SOLVED (rows kept), never scaled afterwards;
+    //   * if the rows cannot be met within the speed limits (they would require the robot to move
+    //     away faster than allowed), the conflict is handled explicitly: protective stop,
+    //     kFlagLimitConflict;
+    //   * a final check of the command actually dispatched against all rows, the box and v_ok;
+    //     any violation -> protective stop, kFlagFinalCheckFailed; the residual is logged.
+    // Release 3.0 multiplied the QP solution by the mode scale and the SSM ratio after solving,
+    // which can violate a row with rhs > 0 (Reviewer 2, round 4).
     qp_relaxed_prev = false;
     bool stop_cmd = c.sup->stopped() || mission == static_cast<int>(MissionCmd::Abort);
     QpResult qr{};
+    const double s_mode = c.sup->speed_scale();
+    const double sep = c.geo->last_min_separation();
+    const double t_age = age_ns < INT64_MAX / 8 ? age_ns * 1e-9 : 0.0;
+    const bool ssm_on = (c.ssm_monitor || c.strategy == Strategy::Ssm) && c.strategy != Strategy::PotentialField && sep > -1;
+    const double v_ok = ssm_on ? max_speed_for_separation(c.ssm, sep, t_age) : -1.0;
+    const double psd = ssm_on ? protective_separation(c.ssm, v_ok, t_age).total : 0.0;
+    double sigma = s_mode;           // fraction of the nominal speed envelope actually used
+    const ConstraintSet* rows[2] = {nullptr, nullptr};
     if (!stop_cmd) {
       switch (c.strategy) {
         case Strategy::Proposed:
         case Strategy::HcCbf: {
-          const ConstraintSet* sets[2] = {&gset, learned_used ? &lset : nullptr};
-          qr = qp.solve(qd_nom, c.qd_max, sets, 2, qd_cmd);
-          if (!qr.feasible && learned_used) {
-            static int dbl = 0;
-            if (getenv("HRC_DEBUG_QP") && dbl++ < 3) {
-              std::fprintf(stderr, "RELAX learned h=%.3f rhs=%.3f a=", lset.rows[0].h, lset.rows[0].rhs);
-              for (int j = 0; j < 6; ++j) std::fprintf(stderr, "%.3f ", lset.rows[0].a[j]);
-              std::fprintf(stderr, " geo_hmin=%.3f\n", gset.h_min);
-            }
-            flags |= kFlagQpRelaxed;
-            qp_relaxed_prev = true;
-            const ConstraintSet* g_only[1] = {&gset};
-            QpResult q2 = qp.solve(qd_nom, c.qd_max, g_only, 1, qd_cmd);
-            q2.iters += qr.iters;
-            qr = q2;
-          }
-          if (!qr.feasible) {
-            flags |= kFlagQpFailed; stop_cmd = true;
-            static int dbg = 0;
-            if (getenv("HRC_DEBUG_QP") && dbg++ < 3) {
-              std::fprintf(stderr, "QP fail viol=%g iters=%d rows=%d\n", qr.max_violation, qr.iters, gset.n);
-              for (int r = 0; r < gset.n; ++r) {
-                std::fprintf(stderr, "  h=%.3f rhs=%.3f a=", gset.rows[r].h, gset.rows[r].rhs);
-                for (int j = 0; j < 6; ++j) std::fprintf(stderr, "%.3f ", gset.rows[r].a[j]);
-                std::fprintf(stderr, "\n");
-              }
-              std::fprintf(stderr, "  qd_max=");
-              for (int j = 0; j < 6; ++j) std::fprintf(stderr, "%.2f ", c.qd_max[j]);
-              std::fprintf(stderr, "\n");
+          rows[0] = &gset;
+          rows[1] = learned_used ? &lset : nullptr;
+          const LimitedFilterResult lf =
+              limited_filter(qp, *c.geo, qd_nom, c.qd_max, s_mode, ssm_on ? v_ok : -1.0, rows[0], rows[1], qd_cmd);
+          qr.iters = lf.iters;
+          qr.feasible = !lf.stop;
+          if (lf.relaxed) { flags |= kFlagQpRelaxed; qp_relaxed_prev = true; rows[1] = nullptr; }
+          if (lf.ssm_reduced) flags |= kFlagSsmReduced;
+          if (lf.qp_failed) flags |= kFlagQpFailed;
+          if (lf.limit_conflict) flags |= kFlagLimitConflict;
+          if (lf.stop) stop_cmd = true;
+          sigma = lf.sigma;
+          break;
+        }
+        case Strategy::Ssm: {
+          // speed-and-separation baseline: no barrier rows, so scaling cannot violate any row
+          qd_cmd = qd_nom;
+          for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] *= sigma;
+          if (ssm_on) {
+            const double v = c.geo->link_speed(qd_cmd);
+            if (v > v_ok) {
+              flags |= kFlagSsmReduced;
+              const double r = v > 1e-9 ? v_ok / v : 0.0;
+              for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] *= r;
+              sigma *= r;
             }
           }
           break;
         }
-        case Strategy::Ssm:
-          qd_cmd = qd_nom;
-          break;
         case Strategy::PotentialField: {
           qd_cmd = qd_nom;
           for (int r = 0; r < gset.n; ++r) {
@@ -237,23 +268,18 @@ void control_loop(LoopContext& c, RobotT& robot) {
             const double k = c.pf.k_rep * (1.0 / dd - 1.0 / c.pf.d0) / (dd * dd);
             for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] += k * gset.rows[static_cast<size_t>(r)].a[static_cast<size_t>(j)];
           }
-          for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] = std::clamp(qd_cmd[j], -c.qd_max[j], c.qd_max[j]);
+          for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] = std::clamp(qd_cmd[j], -c.qd_max[j], c.qd_max[j]) * sigma;
           break;
         }
       }
     }
-    // speed-and-separation monitor (ISO/TS 15066 5.5.4) and mode speed scaling
-    double scale = c.sup->speed_scale();
-    const double sep = c.geo->last_min_separation();
-    const double t_age = age_ns < INT64_MAX / 8 ? age_ns * 1e-9 : 0.0;
-    double psd = 0;
-    if (!stop_cmd && (c.ssm_monitor || c.strategy == Strategy::Ssm) && c.strategy != Strategy::PotentialField && sep > -1) {
-      const double v_cmd = c.geo->link_speed(qd_cmd) * scale;
-      const double v_ok = max_speed_for_separation(c.ssm, sep, t_age);
-      if (v_cmd > v_ok) scale *= (v_cmd > 1e-9 ? v_ok / v_cmd : 0.0);
-      psd = protective_separation(c.ssm, v_ok, t_age).total;
+    // ---------------------------------------------------------------- final check of the dispatched command
+    double final_viol = 0.0;
+    if (!stop_cmd) {
+      final_viol = command_violation(*c.geo, qd_cmd, c.qd_max, s_mode, ssm_on ? v_ok : -1.0, rows, 2);
+      if (final_viol > 1e-6) { flags |= kFlagFinalCheckFailed; stop_cmd = true; }
     }
-    for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] *= scale;
+    const double scale = sigma;
     const int64_t t5 = mono_ns();
 
     // ---------------------------------------------------------------- injected overrun
@@ -310,6 +336,39 @@ void control_loop(LoopContext& c, RobotT& robot) {
       rec.closest_kp[0] = static_cast<float>(kp.x); rec.closest_kp[1] = static_cast<float>(kp.y); rec.closest_kp[2] = static_cast<float>(kp.z);
     }
     if (!(have_hs && hs.available)) flags |= kFlagEstimateUnavailable;
+    // ---- 3.1 fields
+    rec.final_viol = static_cast<float>(final_viol);
+    rec.v_ssm_ok = static_cast<float>(ssm_on ? v_ok : -1.0);
+    {
+      double m2 = 0;
+      for (int j = 0; j < rs.qd.n; ++j) m2 += rs.qd[j] * rs.qd[j];
+      rec.qd_meas_norm = static_cast<float>(std::sqrt(m2));
+    }
+    rec.cond_mask = c.sup->active_mask();
+    rec.d_enqueue_prev_ns = d_enqueue_prev;
+    rec.gt_min_sep_m = NAN;
+    rec.est_err_max_m = NAN;
+    rec.est_err_closest_m = NAN;
+    rec.gt_age_ms = NAN;
+    if (c.gt) {
+      GtSample g;
+      if (c.gt->load(g)) {
+        rec.gt_min_sep_m = static_cast<float>(g.sep);
+        rec.gt_age_ms = static_cast<float>((t7 - g.t_gt_ns) * 1e-6);
+        if (have_hs && hs.available)
+          for (int k = 0; k < GtSample::kRing; ++k)
+            if (g.t_obs[k] == hs.t_obs_ns) {
+              rec.est_err_max_m = static_cast<float>(g.err[k]);
+              rec.est_err_closest_m = static_cast<float>(g.err_closest[k]);
+            }
+      }
+    }
+    {
+      const bool ctrl_stop = (flags & (kFlagQpFailed | kFlagLimitConflict | kFlagFinalCheckFailed)) != 0;
+      if (ctrl_stop != ctrl_stop_prev && c.ev)
+        c.ev->emit(EventKind::Info, 0, 0, flags, ctrl_stop ? "controller_stop_begin" : "controller_stop_end");
+      ctrl_stop_prev = ctrl_stop;
+    }
     if (c.bus) {
       Telemetry tm;
       tm.t_ns = t7; tm.q = rs.q; tm.qd = rs.qd; tm.min_sep_m = sep; tm.h_geo = gset.h_min;
@@ -317,14 +376,17 @@ void control_loop(LoopContext& c, RobotT& robot) {
       tm.cycle = idx; tm.task_cycles = c.tasks->completed();
       c.bus->telemetry.store(tm);
     }
+    // ---------------------------------------------------------------- end of cycle (3.1)
+    // Execution time = wake-up -> completion of the enqueue of this record. t_end_ns is taken when
+    // the record is complete; the enqueue that follows is measured and written into the NEXT
+    // record (d_enqueue_prev_ns), so exec = t_end_ns - t_wake_ns + next.d_enqueue_prev_ns exactly.
+    // The deadline seen by the supervisor and counted in the summary is judged at enqueue completion.
+    const int64_t deadline = t_rel + c.period_ns;
     const int64_t t_end = mono_ns();
     rec.t_end_ns = t_end;
     rec.d_log_ns = static_cast<int32_t>(t_end - t7);
-    const bool overrun = t_end > t_rel + c.period_ns;
-    if (overrun) { flags |= kFlagOverrun; ++c.deadline_misses; }
+    if (t_end > deadline) flags |= kFlagOverrun;
     if (flags & kFlagInjectedOverrun) ++c.injected_overrun_cycles;
-    prev_overrun = overrun;
-    c.heartbeat_ns = t_end;
 
     // next release; releases that are already in the past are skipped, never bunched
     t_rel += c.period_ns;
@@ -336,6 +398,16 @@ void control_loop(LoopContext& c, RobotT& robot) {
     }
     rec.flags = flags;
     c.log->push_cycle(rec);
+    const int64_t t_q = mono_ns();
+    d_enqueue_prev = static_cast<int32_t>(t_q - t_end);
+    const bool overrun = t_q > deadline;
+    if (overrun) ++c.deadline_misses;
+    prev_overrun = overrun;
+    c.heartbeat_ns = t_q;
+    if (t_q > t_rel) {  // the enqueue itself made the next release late: skip it (visible as a gap in t_release_ns)
+      ++c.late_releases;
+      while (t_rel < t_q) t_rel += c.period_ns;
+    }
     ++c.cycles;
   }
   c.running = false;
@@ -494,6 +566,7 @@ int main(int argc, char** argv) {
   GeometricCbfParams gp;
   gp.kappa = cfg.get("control.kappa", 2.0);
   gp.max_rows = static_cast<int>(cfg.get("control.geo_rows", 6.0));
+  gp.position_margin = cfg.get("control.position_margin", 0.0);  // 3.1; 0 = release 3.0 behaviour
   {
     const std::string mm = cfg.get("control.motion.model", std::string("bound"));
     gp.motion.worst_case = mm == "worst_case";
@@ -587,6 +660,66 @@ int main(int argc, char** argv) {
   c.bus = &bus;
   c.streams_total = cp.n;
 
+  // ------------------------------------------------------------------ ground-truth probe (3.1, evaluation only)
+  // Separation between the simulator's true robot state and the scripted human, and the error of
+  // each fused estimate against the scripted keypoints at its observation time. Runs on the
+  // auxiliary core at 250 Hz so that it adds nothing to the control path; never used for control.
+  SeqlockSlot<GtSample> gt_slot;
+  std::atomic<bool> gt_run{true};
+  std::thread gt_thread;
+  if (sim_robot && cfg.get_bool("logging.ground_truth", true)) {
+    c.gt = &gt_slot;
+    const double min_conf = gp.min_keypoint_conf;
+    gt_thread = std::thread([&, dh, min_conf] {
+      if (aux_cpu >= 0) {
+        cpu_set_t s;
+        CPU_ZERO(&s);
+        CPU_SET(aux_cpu, &s);
+        pthread_setaffinity_np(pthread_self(), sizeof s, &s);
+      }
+      Kinematics kin(dh);
+      const double r_link = kin.params().link_radius;
+      GtSample g;
+      std::array<Vec3, kKeypoints> kp;
+      RobotState ts;
+      HumanState est;
+      int64_t last_obs = 0;
+      int64_t t = mono_ns();
+      while (gt_run) {
+        t += 4'000'000;
+        sleep_until_mono(t);
+        const int64_t now = mono_ns();
+        if (sim_robot->true_state(ts)) {
+          kin.update(ts.q);
+          human.keypoints((now - t_sim0) * 1e-9, kp);
+          double best = 1e9;
+          for (const auto& lp : kin.points())
+            for (const auto& p : kp) best = std::min(best, (lp.p - p).norm() - r_link);
+          g.sep = best;
+          g.t_gt_ns = now;
+        }
+        if (fusion.latest(est) && est.available && est.t_obs_ns != last_obs) {
+          last_obs = est.t_obs_ns;
+          human.keypoints((est.t_obs_ns - t_sim0) * 1e-9, kp);
+          double e = 0, e_closest = NAN, d_closest = 1e9;
+          for (int j = 0; j < kKeypoints; ++j) {
+            if (est.conf[static_cast<size_t>(j)] < min_conf) continue;
+            const double ej = (est.kp[static_cast<size_t>(j)] - kp[static_cast<size_t>(j)]).norm();
+            e = std::max(e, ej);
+            double dj = 1e9;  // distance of the ESTIMATED keypoint to the robot (true state, last probe)
+            for (const auto& lp : kin.points()) dj = std::min(dj, (lp.p - est.kp[static_cast<size_t>(j)]).norm());
+            if (dj < d_closest) { d_closest = dj; e_closest = ej; }
+          }
+          g.t_obs[g.head] = est.t_obs_ns;
+          g.err[g.head] = e;
+          g.err_closest[g.head] = e_closest;
+          g.head = (g.head + 1) % GtSample::kRing;
+        }
+        gt_slot.store(g);
+      }
+    });
+  }
+
   // ------------------------------------------------------------------ fault campaign
   InjectionTargets tg;
   tg.stream_timeout = [&](int cam, double s) { cams.inject_stream_timeout(cam, s); };
@@ -594,8 +727,17 @@ int main(int argc, char** argv) {
   tg.partition = [&](double s) { if (sim_robot) sim_robot->inject_partition(s); };
   tg.comm_faults = [&](int n) { if (sim_robot) sim_robot->inject_comm_faults(n); };
   tg.lunge = [&](double s) {
-    // right hand toward the current TCP at 2.0 m/s (above the 1.6 m/s scripted bound)
-    human.inject_lunge((mono_ns() - t_sim0) * 1e-9, s, geo.kinematics().tcp(), 2.0);
+    // right hand toward the current TCP at 2.0 m/s (above the 1.6 m/s scripted bound).
+    // 3.1: the TCP comes from the simulator's state with a private kinematics object; 3.0 read
+    // the control thread's kinematics from the injector thread (an unsynchronised access).
+    Vec3 target{};
+    RobotState ts;
+    if (sim_robot && sim_robot->true_state(ts)) {
+      Kinematics k(dh);
+      k.update(ts.q);
+      target = k.tcp();
+    }
+    human.inject_lunge((mono_ns() - t_sim0) * 1e-9, s, target, 2.0);
   };
   tg.bad_config = [&]() { c.config_rejected = true; };  // validator rejects a negative separation floor
   c.inj = &tg;
@@ -709,6 +851,8 @@ int main(int argc, char** argv) {
   // ------------------------------------------------------------------ shutdown and provenance
   injector.stop();
   aux_run = false;
+  gt_run = false;
+  if (gt_thread.joinable()) gt_thread.join();
   if (wd_thread.joinable()) wd_thread.join();
   op_thread.join();
   for (auto& t : load_threads) t.join();

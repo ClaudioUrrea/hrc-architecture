@@ -83,15 +83,32 @@ Mode Supervisor::update(const SupervisorInputs& in) {
   if (in.config_rejected && ev_)
     ev_->emit(EventKind::FaultDetected, static_cast<uint8_t>(FaultCategory::ConfigurationInconsistency));
 
-  // --- strict priority: most severe active condition wins
+  // --- reported mode: most severe active condition. Limits: composed over all active conditions.
+  bool on[kNumModes] = {};
+  on[static_cast<int>(Mode::LowConfidence)] = low_conf_.active;
+  on[static_cast<int>(Mode::DegradedStream)] = stream_.active;
+  on[static_cast<int>(Mode::GeometricFallback)] = fallback_.active;
+  on[static_cast<int>(Mode::OverrunShed)] = overrun_.active;
+  on[static_cast<int>(Mode::ProtectiveStop)] = stop_est_.active || stop_comm_.active || stop_overrun_.active;
+  on[static_cast<int>(Mode::ProtectiveStopLatched)] = latched_partition_ || latched_violation_;
+  on[static_cast<int>(Mode::EmergencyStop)] = estop_;
   Mode m = Mode::Nominal;
-  if (low_conf_.active) m = Mode::LowConfidence;
-  if (stream_.active) m = std::max(m, Mode::DegradedStream);
-  if (fallback_.active) m = std::max(m, Mode::GeometricFallback);
-  if (overrun_.active) m = std::max(m, Mode::OverrunShed);
-  if (stop_est_.active || stop_comm_.active || stop_overrun_.active) m = std::max(m, Mode::ProtectiveStop);
-  if (latched_partition_ || latched_violation_) m = std::max(m, Mode::ProtectiveStopLatched);
-  if (estop_) m = Mode::EmergencyStop;
+  double scale = p_.speed_scale[0], floor = p_.floor_m[0];
+  uint8_t mask = 0;
+  for (int k = 1; k < kNumModes; ++k) {
+    if (!on[k]) continue;
+    m = static_cast<Mode>(k);
+    mask = static_cast<uint8_t>(mask | (1u << k));
+    scale = std::min(scale, p_.speed_scale[static_cast<size_t>(k)]);
+    floor = std::max(floor, p_.floor_m[static_cast<size_t>(k)]);
+  }
+  scale_ = scale;
+  floor_ = floor;
+  mask_ = mask;
+  // The learned barrier is suspended while its own fallback hold or a degraded stream is active,
+  // whatever more severe condition is also active, and in every stop mode.
+  learned_ok_ = !on[static_cast<int>(Mode::DegradedStream)] && !on[static_cast<int>(Mode::GeometricFallback)] &&
+                m < Mode::ProtectiveStop;
   if (m != mode_) {
     if (ev_) ev_->emit(EventKind::ModeChange, 0, 0, 0, to_string(m), static_cast<uint8_t>(mode_), static_cast<uint8_t>(m));
     mode_ = m;

@@ -49,6 +49,9 @@ class SimRobot final : public IRobotController {
   // fault hooks (thread-safe)
   void inject_partition(double seconds);
   void inject_comm_faults(int n_calls);
+  // Ground truth for evaluation only (3.1): the simulator's current state, without the state
+  // latency, partitions or injected communication faults. Never used by the controller.
+  bool true_state(RobotState& out) const { return truth_.load(out); }
 
  private:
   void loop();
@@ -60,6 +63,7 @@ class SimRobot final : public IRobotController {
   std::vector<RobotState> hist_;  // ring of past states for latency
   size_t hist_head_ = 0;
   SeqlockSlot<RobotState> visible_;
+  SeqlockSlot<RobotState> truth_;
   std::atomic<double> override_{1.0};
   std::atomic<int64_t> partition_until_{0};
   std::atomic<int> comm_faults_{0};

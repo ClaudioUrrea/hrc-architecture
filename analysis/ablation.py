@@ -23,12 +23,13 @@ def analyse(root, allow_non_rt=False):
             continue
         c = H.cycles(d)
         e = H.exec_ms(c)
+        e = e[np.isfinite(e)]  # 3.1: the last record of a run has no recorded enqueue
         g = by[name]
         g["exec"].append(e.astype(np.float32))
         ri = H.release_interval_ms(c)
         g["jit"].append(ri[~H.flag(c, "release_late")[1:]])
         g["medians"].append(float(np.median(e)))
-        g["miss"] += int(H.flag(c, "overrun").sum())
+        g["miss"] += int(H.deadline_miss(c, H.period_ns(d)).sum())
         g["n"] += len(c)
         g["runs"].append(d.name)
     table = {}

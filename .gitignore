@@ -4,3 +4,4 @@ runs_pilot/
 results/
 __pycache__/
 *.pyc
+build_*/

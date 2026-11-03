@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(hrc_architecture VERSION 3.0.0 LANGUAGES CXX)
+project(hrc_architecture VERSION 3.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,7 +31,7 @@ add_library(hrc_core STATIC src/common/common.cpp src/log/run_logger.cpp src/kin
 target_link_libraries(hrc_core PUBLIC Threads::Threads)
 
 # ---------------------------------------------------------------- safety + control: must build without any vendor SDK
-add_library(hrc_safety STATIC src/safety/geometric_cbf.cpp src/safety/learned_cbf.cpp
+add_library(hrc_safety STATIC src/safety/geometric_cbf.cpp src/safety/learned_cbf.cpp src/safety/limited_filter.cpp
             src/control/supervisor.cpp src/control/control.cpp)
 target_link_libraries(hrc_safety PUBLIC hrc_core)
 
@@ -93,6 +93,10 @@ target_link_libraries(hrc_conformance hrc_adapters)
 add_executable(hrc_protocol_bench apps/hrc_protocol_bench.cpp)
 target_link_libraries(hrc_protocol_bench hrc_core)
 
+# release 3.1: Cartesian stopping check against Eq. (3) (tools/stop_samples.py feeds it)
+add_executable(stop_check tools/stop_check.cpp)
+target_link_libraries(stop_check hrc_core)
+
 # ---------------------------------------------------------------- tests
 enable_testing()
 # The safety module is tested with NO adapter, simulator or integration library on the link line.
@@ -102,3 +106,8 @@ add_test(NAME safety_isolated COMMAND test_safety_isolated WORKING_DIRECTORY ${C
 add_executable(test_system tests/test_system.cpp)
 target_link_libraries(test_system hrc_safety hrc_sim hrc_adapters hrc_integration hrc_faults)
 add_test(NAME system COMMAND test_system WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+# release 3.1: composition of limits, supervisor with simultaneous conditions, concurrent data exchange.
+# For race detection build the whole tree with -DCMAKE_CXX_FLAGS="-fsanitize=thread -g -O1" (docs/BUILD.md).
+add_executable(test_r31 tests/test_r31.cpp)
+target_link_libraries(test_r31 hrc_safety)
+add_test(NAME r31_limits_supervisor_concurrency COMMAND test_r31 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

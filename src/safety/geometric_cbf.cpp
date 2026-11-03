@@ -75,7 +75,7 @@ bool GeometricCbf::evaluate(const RobotState& rs, const HumanState& hs, Constrai
       double meas = nrm.dot(hs.kp_vel[static_cast<size_t>(pr.kj)]);
       approach = std::min(p_.motion.v_max, std::max(0.0, meas) + p_.motion.v_margin);
     }
-    row.h = pr.d - approach * age_s_ - p_.r_safety;
+    row.h = pr.d - approach * age_s_ - p_.position_margin - p_.r_safety;
     // d/dt(dist) = nrm.(J qd) - nrm.v_h  >=  -kappa h   =>   a.qd >= -kappa h + nrm.v_h
     row.rhs = -p_.kappa * row.h + approach;
     out.h_min = std::min(out.h_min, row.h);
@@ -84,6 +84,19 @@ bool GeometricCbf::evaluate(const RobotState& rs, const HumanState& hs, Constrai
   last_link_speed_ = vmax_link;
   out.trustworthy = true;
   return out.n > 0;
+}
+
+void GeometricCbf::retighten(ConstraintSet& cs, double new_floor) {
+  const double delta = new_floor - p_.r_safety;
+  p_.r_safety = new_floor;
+  if (delta == 0.0) return;
+  cs.h_min = 1e9;
+  for (int r = 0; r < cs.n; ++r) {
+    ConstraintRow& row = cs.rows[static_cast<size_t>(r)];
+    row.h -= delta;
+    row.rhs += p_.kappa * delta;
+    cs.h_min = std::min(cs.h_min, row.h);
+  }
 }
 
 double GeometricCbf::link_speed(const Joints& qd) const {

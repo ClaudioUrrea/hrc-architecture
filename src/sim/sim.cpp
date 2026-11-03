@@ -112,6 +112,7 @@ void SimRobot::loop() {
     s.status_bits = (active.stop ? static_cast<uint32_t>(kStatusProtectiveStop) : 0u) | (estop_ ? static_cast<uint32_t>(kStatusEmergencyStop) : 0u);
     hist_head_ = (hist_head_ + 1) % hist_.size();
     hist_[hist_head_] = s;
+    truth_.store(s);  // evaluation-only ground truth
     // publish the state that is state_latency old
     const int64_t slat = static_cast<int64_t>(p_.state_latency_ms * 1e6);
     size_t k = hist_head_;

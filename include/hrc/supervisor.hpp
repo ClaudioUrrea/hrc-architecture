@@ -20,7 +20,14 @@
 //                                        (h_geo < violation_threshold)
 //   7         EMERGENCY_STOP             memory allocation failure                            operator acknowledgement
 //
-// Speed scale and separation floor applied per mode are in SupervisorParams.
+// Speed scale and separation floor of each mode are in SupervisorParams.
+//
+// Release 3.1: the reported mode is still the most severe active condition, but the limits
+// are composed over ALL active conditions: speed scale = minimum, separation floor = maximum,
+// learned barrier allowed only if no active condition forbids it. A more severe condition can
+// therefore never remove a restriction that a less severe, still-active condition imposes
+// (e.g. low confidence + overrun keeps scale 0.7 and floor 0.225 m). Release 3.0 took the
+// limits of the reported mode only (Reviewer 2, round 4).
 #pragma once
 #include <array>
 #include <atomic>
@@ -81,13 +88,17 @@ class EventChannel;
 
 class Supervisor {
  public:
-  explicit Supervisor(const SupervisorParams& p, EventChannel* ev = nullptr) : p_(p), ev_(ev) {}
+  explicit Supervisor(const SupervisorParams& p, EventChannel* ev = nullptr)
+      : p_(p), ev_(ev), scale_(p.speed_scale[0]), floor_(p.floor_m[0]) {}
   Mode update(const SupervisorInputs& in);
   Mode mode() const { return mode_; }
-  double speed_scale() const { return p_.speed_scale[static_cast<size_t>(mode_)]; }
-  double floor() const { return p_.floor_m[static_cast<size_t>(mode_)]; }
-  bool learned_allowed() const { return mode_ == Mode::Nominal || mode_ == Mode::LowConfidence || mode_ == Mode::OverrunShed; }
+  // Limits composed over every active condition (see the header comment).
+  double speed_scale() const { return scale_; }
+  double floor() const { return floor_; }
+  bool learned_allowed() const { return learned_ok_; }
   bool stopped() const { return mode_ >= Mode::ProtectiveStop; }
+  // Bit k set <=> a condition mapped to mode k is active (bit 0 unused). Logged every cycle.
+  uint8_t active_mask() const { return mask_; }
   // Operator acknowledgement (real HMI or the simulated operator of the experiment harness).
   void acknowledge(int64_t now_ns);
   // Raised by the watchdog thread when the control thread misses its heartbeat (thread-safe).
@@ -103,6 +114,9 @@ class Supervisor {
   SupervisorParams p_;
   EventChannel* ev_;
   Mode mode_ = Mode::Nominal;
+  double scale_ = 1.0, floor_ = 0.15;
+  bool learned_ok_ = true;
+  uint8_t mask_ = 0;
   Cond low_conf_, stream_, fallback_, overrun_, stop_est_, stop_comm_, stop_overrun_;
   bool latched_partition_ = false, latched_violation_ = false, estop_ = false;
   std::atomic<bool> watchdog_tripped_{false};

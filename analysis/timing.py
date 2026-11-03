@@ -18,7 +18,7 @@ def analyse(root, experiment="timing_campaign", allow_non_rt=False):
         return None
     exec_ret, jitter, ages = [], [], []
     stage = {s: [] for s in STAGES}
-    tot = inj = miss_ret = miss_inj = late = 0
+    tot = inj = miss_ret = miss_inj = late = skipped = 0
     blocks = blocks_with_miss = 0
     excluded_non_rt, inputs = [], []
     for d in runs:
@@ -29,14 +29,16 @@ def analyse(root, experiment="timing_campaign", allow_non_rt=False):
         c = H.cycles(d)
         inputs.append({"run": d.name, "manifest_sha256": H.hashlib.sha256((d / "MANIFEST.sha256").read_bytes()).hexdigest()})
         e = H.exec_ms(c).astype(np.float32)
+        fin = np.isfinite(e)  # 3.1: the last record of a run has no recorded enqueue
         injm = H.flag(c, "injected_overrun")
-        over = H.flag(c, "overrun")
+        over = H.deadline_miss(c, H.period_ns(d))
         tot += len(c)
         inj += int(injm.sum())
         miss_ret += int((over & ~injm).sum())
         miss_inj += int((over & injm).sum())
         late += int(H.flag(c, "release_late").sum())
-        exec_ret.append(e[~injm])
+        skipped += H.skipped_releases(c, H.period_ns(d))
+        exec_ret.append(e[~injm & fin])
         ri = H.release_interval_ms(c)
         ok = ~H.flag(c, "release_late")[1:]
         jitter.append(ri[ok].astype(np.float32))
@@ -56,7 +58,8 @@ def analyse(root, experiment="timing_campaign", allow_non_rt=False):
         "runs": blocks, "excluded_non_rt": excluded_non_rt,
         "cycles": {"total": tot, "with_injected_overrun_excluded": inj, "retained": tot - inj,
                    "deadline_misses_retained": miss_ret, "deadline_misses_in_injected": miss_inj,
-                   "late_releases": late},
+                   "late_releases": late, "skipped_releases_from_t_release": skipped},
+        "exec_endpoint": "enqueue completion (3.1 records); record completion (3.0 records)",
         "exec_ms": {"median": q(E, 50), "p95": q(E, 95), "p99": q(E, 99), "max": float(E.max()), "sd": float(E.std(ddof=1))},
         "release_interval_ms": {"mean": float(J.mean()), "sd": float(J.std(ddof=1))},
         "stage_median_ms": {s[2:-3]: q(np.concatenate(stage[s]), 50) for s in STAGES},
