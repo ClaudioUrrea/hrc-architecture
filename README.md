@@ -17,18 +17,6 @@ This is the software evaluated in revision 3 of manuscript electronics-4587969 (
 Filter for Human–Robot Collaboration: Pre-Registered Evaluation of Timing, Fault Handling and
 Interface Conformance*.
 
-> [!WARNING]
-> **Correction of data provenance (12 October 2026).** The data files in releases 1.0.0 to 2.1.0
-> of this repository and of the Figshare deposit [doi:10.6084/m9.figshare.33194013](https://doi.org/10.6084/m9.figshare.33194013)
-> are **not experimental records**. The original logs and the implementation source code of the
-> study described in earlier versions of manuscript electronics-4587969 were lost, and no backup
-> exists. The files deposited with those releases were reconstructed from the summary statistics
-> printed in the manuscript, so they cannot verify it (`docs/PROVENANCE_NOTICE.md`). Release 3.x
-> is a re-implementation and contains no data generated that way. Every result reported in the
-> revised manuscript comes from raw, hash-manifested run directories written by the programs
-> below (`docs/DATA_POLICY.md`). The history of this repository is kept unchanged so that it
-> remains auditable; releases 1.0.0–2.1.0 remain under tag `v2.1.0`.
-
 **This software must not be connected to a robot that can reach a person.** It has not been
 assessed against IEC 61508, ISO 13849, ISO 10218 or ISO/TS 15066, and the emergency stop it
 issues is not a safety-rated function.
@@ -97,6 +85,10 @@ with this tool, following the author's instructions. No data were generated with
 result comes from running the software. Co-Authored-By trailers in the commit history are added
 automatically by the coding tool; they record the tool's assistance, declared in the article,
 and do not denote authorship.
+
+## Earlier releases
+
+Releases 1.0.0–2.1.0 (tag `v2.1.0`) are superseded and are not evidence for any manuscript: their data files were reconstructed from published summary statistics, not recorded (`docs/PROVENANCE_NOTICE.md`).
 
 ## License
 
