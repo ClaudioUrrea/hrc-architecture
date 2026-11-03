@@ -53,6 +53,13 @@ LimitedFilterResult limited_filter(QpFilter& qp, const GeometricCbf& geo, const 
         if (it == 11) cand = 0.0;
         QpResult qs = solve_at(qp, cand, qd_nom, qd_max, rows, 2, tmp);
         res.iters += qs.iters;
+        if (!qs.feasible && rows[1]) {
+          // same rule as above: learned rows that make the problem infeasible are dropped
+          const ConstraintSet* geo_only[2] = {rows[0], nullptr};
+          qs = solve_at(qp, cand, qd_nom, qd_max, geo_only, 2, tmp);
+          res.iters += qs.iters;
+          if (qs.feasible) { res.relaxed = true; rows[1] = nullptr; }
+        }
         if (qs.feasible && geo.link_speed(tmp) <= v_ok) { found = true; break; }
         if (cand == 0.0) break;
         cand *= 0.5;

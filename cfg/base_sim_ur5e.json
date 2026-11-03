@@ -53,7 +53,8 @@
       "host": "192.168.10.2",
       "port": 47011,
       "timeout_us": 5000
-    }
+    },
+    "position_margin": 0.0
   },
   "ssm": {
     "enabled": true,
@@ -178,6 +179,7 @@
   },
   "logging": {
     "run_root": "runs",
-    "backup_dirs": []
+    "backup_dirs": [],
+    "ground_truth": true
   }
 }

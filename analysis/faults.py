@@ -9,17 +9,23 @@ reports, explicitly: other injections within +-window_s (overlapping), whether a
 the same category was already active when it arrived (absorbed into an ongoing episode), and
 how many candidate detections it had.
 
-Episode. A supervisor condition from its activation (fault_detected) to its clearing
-(fault_cleared with the same category and tag; for latched conditions, the operator
-acknowledgement). Several injections falling inside one episode are reported as one episode
-with several injections; the 1-s re-detection merge rule of release 3.0 is not used.
+Condition and episode. A supervisor condition runs from its activation (fault_detected) to its
+clearing (fault_cleared with the same category and tag; for latched conditions, the operator
+acknowledgement). One fault can raise several conditions of its category (e.g. an overrun raises
+deadline_overrun and, if it persists, overrun_stop), so an EPISODE of a category is a maximal
+period during which at least one condition of that category is active (overlapping condition
+intervals of the same category are merged). Episodes are the units counted for reliability. A
+condition still active at the end of the run is right-censored. Several injections falling
+inside one episode are reported as one episode with several injections; the 1-s re-detection
+merge rule of release 3.0 is not used.
 
-Recovery (episode-specific). From the matched detection to the clearing of THAT condition, not
-to the next return to NOMINAL, which can belong to another active fault (3.0). An injection
-whose detection activates no condition (configuration inconsistency: the update is rejected,
-the mode is unchanged) has recovery 0 and is marked non-interrupting. Also reported per
-injection: stopped time between detection and clearing (cycles with a stop command), which can
-overlap with other conditions and is labelled as such.
+Recovery (episode-specific). From the matched detection to the end of the episode of that
+category that contains it, not to the next return to NOMINAL, which can belong to a fault of
+another category (3.0). An injection whose detection activates no condition (configuration
+inconsistency: the update is rejected, the mode is unchanged) has recovery 0 and is marked
+non-interrupting. Also reported per injection: stopped time between detection and the end of
+the episode (cycles with a stop command), which can overlap with conditions of other
+categories and is labelled as such.
 
 Availability (three metrics, all time-weighted with timestamps; each record covers
 [t_release_i, t_release_{i+1}), so skipped releases are included; the unrecorded start-up and
@@ -62,6 +68,32 @@ def _clear_for(det, clears):
     return None
 
 
+def _episodes(det, clr, t_end_run):
+    """Merged per-category episodes: list of dicts with category, start, end (ns), censored, detections."""
+    by = {}
+    for x in det:
+        if x["category"] in NON_INTERRUPTING:
+            continue
+        cl = _clear_for(x, clr)
+        by.setdefault(x["category"], []).append((x["t_ns"], cl["t_ns"] if cl else t_end_run, cl is None))
+    eps = []
+    for cat, iv in by.items():
+        iv.sort()
+        cur = None
+        for a, b, cz in iv:
+            if cur and a <= cur["end"]:
+                if b > cur["end"]:
+                    cur["end"], cur["censored"] = b, cz
+                elif b == cur["end"]:
+                    cur["censored"] = cur["censored"] or cz
+                cur["detections"] += 1
+            else:
+                cur = {"category": cat, "start": a, "end": b, "censored": cz, "detections": 1}
+                eps.append(cur)
+    eps.sort(key=lambda e: e["start"])
+    return eps
+
+
 def _time_weights(c, period_ns):
     tr = c["t_release_ns"].astype(np.int64)
     w = np.empty(len(c), np.float64)
@@ -90,6 +122,8 @@ def _per_run(d, window_s):
     per = H.period_ns(d)
     w = _time_weights(c, per)
     W = window_s * 1e9  # ns
+    t_run_end = t0 + int(dur * 1e9)
+    eps_ns = _episodes(det, clr, t_run_end)
     reserved = set()
     rows = []
     for i, e in enumerate(inj):
@@ -121,19 +155,18 @@ def _per_run(d, window_s):
                 row["stopped_s_until_clear"] = 0.0
             else:
                 row["interrupting"] = True
-                cl = _clear_for(d1, clr)
-                t_clear = cl["t_ns"] if cl else t0 + int(dur * 1e9)
-                row["recovery_censored"] = cl is None
-                row["recovery_s"] = (t_clear - d1["t_ns"]) * 1e-9 if cl else None
+                ep = next((x for x in eps_ns if x["category"] == cat and x["start"] <= d1["t_ns"] <= x["end"]), None)
+                t_clear = ep["end"] if ep else t_run_end
+                row["recovery_censored"] = (ep is None) or ep["censored"]
+                row["recovery_s"] = None if row["recovery_censored"] else (t_clear - d1["t_ns"]) * 1e-9
                 row["stopped_s_until_clear"] = _stopped_seconds(c, w, d1["t_ns"], t_clear)
+                row["episode_detections"] = ep["detections"] if ep else None
         rows.append(row)
-    # episodes: activation -> clearing of one supervisor condition
-    episodes = []
-    for x in det:
-        cl = _clear_for(x, clr) if x["category"] not in NON_INTERRUPTING else x
-        n_inj = sum(1 for e in inj if e["category"] == x["category"] and x["t_ns"] - W <= e["t_ns"] <= (cl["t_ns"] if cl else x["t_ns"] + W))
-        episodes.append({"category": x["category"], "tag": x.get("text", ""), "t_s": (x["t_ns"] - t0) * 1e-9,
-                         "duration_s": ((cl["t_ns"] - x["t_ns"]) * 1e-9) if cl else None, "injections": n_inj})
+    episodes = [{"category": e["category"], "t_s": (e["start"] - t0) * 1e-9,
+                 "duration_s": None if e["censored"] else (e["end"] - e["start"]) * 1e-9,
+                 "censored": e["censored"], "conditions": e["detections"],
+                 "injections": sum(1 for x in inj if x["category"] == e["category"] and e["start"] - W <= x["t_ns"] <= e["end"])}
+                for e in eps_ns]
     # availability, time-weighted
     T = float(w.sum())
     outside = ~np.isin(c["mode"], list(STOP_MODES))
@@ -201,7 +234,7 @@ def analyse(root, experiments=("fault_injection",), window_s=2.0, n_boot_weibull
     counts = defaultdict(int)
     n_op_run = []
     for eps, dur in eps_by_run:
-        sa = sorted((e for e in eps if e["category"] not in NON_INTERRUPTING), key=lambda e: e["t_s"])
+        sa = sorted(eps, key=lambda e: e["t_s"])  # merged episodes, non-interrupting categories excluded
         for e in sa:
             counts[e["category"]] += 1
         counts_run.append(len(sa))

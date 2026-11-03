@@ -1,4 +1,11 @@
-"""Baseline tuning (selection rule fixed in advance) and the paired comparison."""
+"""Baseline tuning (selection rule fixed in advance) and the paired comparison.
+
+Release 3.1: the comparison includes pf_ssm (potential field under the shared SSM limit), so the
+confirmatory family is 4 baselines x 2 endpoints = 8 paired tests, Holm-adjusted together. The
+tuning rule is unchanged (estimated separation never below the floor on any tuning segment;
+shortest mean task cycle). The minimum TRUE separation (simulator ground truth) is reported as
+a secondary endpoint with paired confidence intervals, outside the Holm family. No equivalence
+or non-inferiority claim is made from a non-significant difference."""
 import json
 from collections import defaultdict
 from pathlib import Path
@@ -17,8 +24,12 @@ def _segment(d):
     c = H.cycles(d)
     avail = ~H.flag(c, "estimate_unavailable")
     sep = c["min_sep_m"][avail & (c["min_sep_m"] > -1)]
-    return {"task_cycle_s": float(np.mean(tc)) if tc else None, "task_cycles": len(tc),
-            "min_sep_m": float(sep.min()) if len(sep) else None}
+    out = {"task_cycle_s": float(np.mean(tc)) if tc else None, "task_cycles": len(tc),
+           "min_sep_m": float(sep.min()) if len(sep) else None}
+    if "gt_min_sep_m" in c.dtype.names:  # 3.1 records
+        gt = c["gt_min_sep_m"][np.isfinite(c["gt_min_sep_m"])]
+        out["gt_min_sep_m"] = float(gt.min()) if len(gt) else None
+    return out
 
 
 def tune(root, out_path=None):
@@ -41,7 +52,9 @@ def tune(root, out_path=None):
                 continue
             m = float(np.mean(cyc))
             if best is None or m < best["mean_task_cycle_s"]:
-                best = {"parameter": meta[strat], "value": v, "mean_task_cycle_s": m, "min_sep_m": min(seps), "segments": len(segs)}
+                gts = [s["gt_min_sep_m"] for s in segs if s.get("gt_min_sep_m") is not None]
+                best = {"parameter": meta[strat], "value": v, "mean_task_cycle_s": m, "min_sep_m": min(seps), "segments": len(segs),
+                        "min_true_sep_m": min(gts) if gts else None}
         if best:
             sel[strat] = best
     if out_path:
@@ -75,4 +88,17 @@ def compare(root):
     adj = holm([r["p"] for r in rows])
     for r, p in zip(rows, adj):
         r["p_holm"] = float(p)
-    return {"hypotheses": len(rows), "rows": rows}
+    secondary = []
+    for strat in [s for s in seg if s != "proposed"]:
+        common = sorted(set(seg["proposed"]) & set(seg[strat]))
+        pairs = [(seg["proposed"][k].get("gt_min_sep_m"), seg[strat][k].get("gt_min_sep_m")) for k in common]
+        pairs = [p for p in pairs if p[0] is not None and p[1] is not None]
+        if len(pairs) < 3:
+            continue
+        a, b = map(np.array, zip(*pairs))
+        r = paired(a, b)
+        r.update({"endpoint": "true_min_sep_m", "baseline": strat, "proposed_mean": float(a.mean()),
+                  "baseline_mean": float(b.mean()), "note": "secondary, outside the Holm family"})
+        secondary.append(r)
+    return {"hypotheses": len(rows), "rows": rows, "secondary_true_separation": secondary,
+            "interpretation": "a non-significant difference is not evidence of equivalence; no margin is defined"}

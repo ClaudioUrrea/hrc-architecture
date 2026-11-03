@@ -21,15 +21,19 @@ still lists the CMake default `-O3 -DNDEBUG` for that variable, but the value se
 CMake default is replaced, `NDEBUG` is not defined. The round-3 manuscript stated `-O3`; this was
 an error in the text. `-march=native` is deliberately not used.
 
-**Stale build label.** The binary was configured when HEAD was `3d3d93d`, so that is the
-commit it embeds in every run manifest. It was rebuilt after the QP change without
-re-running CMake. The sources at tag `campaign-v3` reproduce the binary's behaviour, and the
-SHA-256 above links the executable to the deposited copy.
+**Stale build label.** `CMakeLists.txt` reads the commit identifier when CMake *configures* the
+build directory, not when it compiles. The build directory was configured when HEAD was
+`3d3d93d`, and it was not reconfigured before the final build. That is why every 3.0 run
+manifest records the label `3d3d93d91fc8` and not the tagged commit `1a51a57`. The executable
+used in the campaigns is identified by its SHA-256 (above), which was published in
+`PREREGISTRATION.md` and is deposited with the records. In release 3.1 every campaign queue
+checks before the first run that the embedded label equals the frozen commit (no `-dirty`
+suffix).
 
 ## Release 3.1
 
 ```bash
-git checkout v3.1.0          # tag created when the configuration is frozen
+git checkout campaign-v4     # tag created when the configuration is frozen (docs/PREREGISTRATION_3.1.md)
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 make -C build -j8
 ctest --test-dir build --output-on-failure

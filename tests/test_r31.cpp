@@ -88,6 +88,33 @@ TEST(r31_incompatible_speed_and_barrier_is_an_explicit_stop) {
   CHECK(lf.stop && lf.qp_failed && !lf.limit_conflict);
 }
 
+TEST(r31_ssm_backoff_drops_learned_rows_like_the_base_rule) {
+  // A learned row needs 0.3 rad/s on joint 1; the SSM limit forces the envelope below that.
+  // As in the base rule, the learned row is dropped (geometric rows kept) instead of stopping.
+  GeometricCbf geo(DhParams::ur5e(), GeometricCbfParams{});
+  Joints q = uniform(0.0);
+  q[1] = -1.2; q[2] = 1.5; q[3] = -1.8; q[4] = -1.57;
+  geo.kinematics().update(q);
+  ConstraintSet g, l;
+  g.n = 1;
+  g.rows[0].a = {1, 0, 0, 0, 0, 0, 0};
+  g.rows[0].rhs = -1.0;   // inactive geometric row
+  l.n = 1;
+  l.rows[0].a = {0, 1, 0, 0, 0, 0, 0};
+  l.rows[0].rhs = 0.3;
+  QpFilter qp;
+  Joints nom = uniform(0.0), qd_max = uniform(1.0), cmd;
+  Joints probe = uniform(0.0);
+  probe[1] = 0.3;
+  const double v_ok = 0.5 * geo.link_speed(probe);  // the learned row cannot be met within v_ok
+  LimitedFilterResult lf = limited_filter(qp, geo, nom, qd_max, 1.0, v_ok, &g, &l, cmd);
+  CHECK(!lf.stop);
+  CHECK(lf.relaxed);
+  CHECK(lf.ssm_reduced);
+  const ConstraintSet* chk[2] = {&g, nullptr};
+  CHECK(command_violation(geo, cmd, qd_max, 1.0, v_ok, chk, 2) <= 1e-6);
+}
+
 // Randomised property: whatever the rows, the mode scale and the SSM limit, a command that the
 // limited filter does not turn into a stop satisfies every row, the reduced box and the SSM
 // limit. The same problems are also passed through the 3.0 composition to show that the

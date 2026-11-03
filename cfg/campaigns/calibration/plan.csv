@@ -1,0 +1,7 @@
+config,variant,scenario,seed,duration_s
+cfg/campaigns/calibration/cal_S1.json,cal_S1,S1,600000,600.0
+cfg/campaigns/calibration/cal_S2.json,cal_S2,S2,600001,600.0
+cfg/campaigns/calibration/cal_S3.json,cal_S3,S3,600002,600.0
+cfg/campaigns/calibration/cal_S4.json,cal_S4,S4,600003,600.0
+cfg/campaigns/calibration/cal_S5.json,cal_S5,S5,600004,600.0
+cfg/campaigns/calibration/cal_S6.json,cal_S6,S6,600005,600.0

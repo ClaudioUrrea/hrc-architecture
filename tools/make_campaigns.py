@@ -12,6 +12,17 @@ directory gets plan.csv with one row per run and its expected duration.
     python3 tools/make_campaigns.py compare --selection runs/<...>/tuning_selection.json
     python3 tools/make_campaigns.py injection
     python3 tools/make_campaigns.py sensitivity
+    python3 tools/make_campaigns.py calibration          # 3.1: position-uncertainty calibration runs
+
+Release 3.1 (Reviewer 2, round 4):
+  * calibration: six 10-min runs (S1-S6, proposed strategy, no faults, position margin 0) that
+    measure the error of the fused human estimate against the simulator ground truth; the rule
+    in tools/calibrate_position_margin.py turns them into control.position_margin and ssm.Z_d
+    BEFORE the other campaigns are generated (see docs/PREREGISTRATION_3.1.md);
+  * pf_ssm: the potential-field baseline under the same SSM speed limit as the other strategies,
+    tuned and compared like the others (tuning grid of pf);
+  * ablation: ground-truth probe disabled (logging.ground_truth = false), so that the timing
+    ablation has no evaluation thread that release 3.0 did not have.
 """
 import argparse
 import copy
@@ -116,6 +127,7 @@ def ablation(a):
                         setp(c, k, v)
                     c["background_load"] = {"threads": 2 if load == "load" else 0, "duty": 0.4}
                     c["ablation"] = {"configuration": name, "seed_index": seed, "load": load}
+                    c["logging"]["ground_truth"] = False  # 3.1: no evaluation thread in the timing ablation
                     out.append(c)
     write("ablation", out)
 
@@ -125,6 +137,7 @@ TUNING = {  # principal parameter of each method and its five candidate values
     "hc_cbf": ("control.kappa", [2.0, 3.0, 4.0, 6.0, 8.0]),
     "ssm": ("ssm.C", [0.10, 0.15, 0.20, 0.25, 0.30]),
     "pf": ("pf.k_rep", [0.02, 0.04, 0.08, 0.12, 0.16]),
+    "pf_ssm": ("pf.k_rep", [0.02, 0.04, 0.08, 0.12, 0.16]),  # 3.1
 }
 
 
@@ -190,10 +203,23 @@ def sensitivity(a):
     write("sensitivity", out)
 
 
+def calibration(a):
+    out = []
+    for i, scen in enumerate(("S1", "S2", "S3", "S4", "S5", "S6")):
+        c = cfg("calibration", f"cal_{scen}", 600000 + i, a.calibration_minutes * 60, scen)
+        c["control"]["strategy"] = "proposed"
+        c["control"]["position_margin"] = 0.0
+        c["faults"]["enabled"] = False
+        c["calibration"] = {"purpose": "estimate error vs ground truth; input of tools/calibrate_position_margin.py"}
+        out.append(c)
+    write("calibration", out)
+
+
 def main():
     global OUT, BASE, LIMIT
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["all", "timing", "ablation", "tuning", "compare", "injection", "sensitivity"])
+    ap.add_argument("what", choices=["all", "timing", "ablation", "tuning", "compare", "injection", "sensitivity",
+                                     "calibration"])
     ap.add_argument("--seed", type=int, default=20261012)
     ap.add_argument("--blocks", type=int, default=120)
     ap.add_argument("--block-minutes", type=float, default=100)
@@ -206,6 +232,7 @@ def main():
     ap.add_argument("--injection-hours", type=float, default=10)
     ap.add_argument("--injection-runs", type=int, default=10)
     ap.add_argument("--sensitivity-hours", type=float, default=2)
+    ap.add_argument("--calibration-minutes", type=float, default=10)
     ap.add_argument("--out", default=str(OUT), help="output directory (default cfg/campaigns)")
     ap.add_argument("--base", default=str(ROOT / "cfg" / "base_sim_ur5e.json"))
     ap.add_argument("--limit", type=int, default=0, help="pilot only: keep the first N runs of each campaign")

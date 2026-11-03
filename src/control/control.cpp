@@ -47,6 +47,7 @@ Strategy strategy_from_string(const std::string& s) {
   if (s == "hc_cbf") return Strategy::HcCbf;
   if (s == "ssm") return Strategy::Ssm;
   if (s == "pf" || s == "potential_field") return Strategy::PotentialField;
+  if (s == "pf_ssm") return Strategy::PotentialFieldSsm;
   throw std::runtime_error("unknown strategy: " + s);
 }
 const char* to_string(Strategy s) {
@@ -55,6 +56,7 @@ const char* to_string(Strategy s) {
     case Strategy::HcCbf: return "hc_cbf";
     case Strategy::Ssm: return "ssm";
     case Strategy::PotentialField: return "pf";
+    case Strategy::PotentialFieldSsm: return "pf_ssm";
   }
   return "?";
 }

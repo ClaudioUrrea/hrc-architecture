@@ -57,9 +57,13 @@ struct GtSample {
   int64_t t_gt_ns = 0;          // when the ground-truth separation was evaluated
   double sep = NAN;             // simulator robot state vs scripted human keypoints (m)
   int head = 0;
-  int64_t t_obs[kRing] = {};    // observation times of the last fused estimates
-  double err[kRing] = {};       // their largest keypoint error vs ground truth at that time (m)
-  double err_closest[kRing] = {};  // error of their keypoint closest to the robot (m)
+  // Last fused estimates, keyed by their publication sequence number (unique per publication;
+  // the observation time is not unique: several publications share their oldest frame).
+  uint32_t seq[kRing] = {};
+  double err[kRing] = {};       // largest keypoint error vs ground truth at the estimate's t_obs (m)
+  double err_closest[kRing] = {};  // error of the keypoint closest to the robot (m)
+  // probe diagnostics
+  uint64_t iterations = 0, estimate_reads_failed = 0, estimates_seen = 0;
 };
 
 struct LoopContext {
@@ -112,6 +116,7 @@ void control_loop(LoopContext& c, RobotT& robot) {
   bool prev_overrun = false, qp_relaxed_prev = false, learned_failed_prev = false;
   bool ctrl_stop_prev = false;      // a controller-level stop (QP infeasible, limit conflict, final check) was active
   int32_t d_enqueue_prev = -1;      // enqueue duration of the previous record (logged in the next one)
+  uint32_t prev_est_seq = 0;        // publication number of the estimate used in the previous cycle
   double last_override = -1;
   int64_t last_state_ns = 0;
   uint32_t last_state_seq = 0;
@@ -221,7 +226,8 @@ void control_loop(LoopContext& c, RobotT& robot) {
     const double s_mode = c.sup->speed_scale();
     const double sep = c.geo->last_min_separation();
     const double t_age = age_ns < INT64_MAX / 8 ? age_ns * 1e-9 : 0.0;
-    const bool ssm_on = (c.ssm_monitor || c.strategy == Strategy::Ssm) && c.strategy != Strategy::PotentialField && sep > -1;
+    const bool ssm_on = (c.ssm_monitor || c.strategy == Strategy::Ssm || c.strategy == Strategy::PotentialFieldSsm) &&
+                        c.strategy != Strategy::PotentialField && sep > -1;
     const double v_ok = ssm_on ? max_speed_for_separation(c.ssm, sep, t_age) : -1.0;
     const double psd = ssm_on ? protective_separation(c.ssm, v_ok, t_age).total : 0.0;
     double sigma = s_mode;           // fraction of the nominal speed envelope actually used
@@ -259,9 +265,11 @@ void control_loop(LoopContext& c, RobotT& robot) {
           }
           break;
         }
-        case Strategy::PotentialField: {
+        case Strategy::PotentialField:
+        case Strategy::PotentialFieldSsm: {
           qd_cmd = qd_nom;
           for (int r = 0; r < gset.n; ++r) {
+            // distance as seen by the barrier: separation minus age and position-margin terms
             const double d = gset.rows[static_cast<size_t>(r)].h + c.geo->floor();
             if (d >= c.pf.d0) continue;
             const double dd = std::max(d, 0.02);
@@ -269,6 +277,15 @@ void control_loop(LoopContext& c, RobotT& robot) {
             for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] += k * gset.rows[static_cast<size_t>(r)].a[static_cast<size_t>(j)];
           }
           for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] = std::clamp(qd_cmd[j], -c.qd_max[j], c.qd_max[j]) * sigma;
+          if (ssm_on) {  // pf_ssm only (ssm_on is false for pure pf): no barrier rows, scaling is valid
+            const double v = c.geo->link_speed(qd_cmd);
+            if (v > v_ok) {
+              flags |= kFlagSsmReduced;
+              const double r = v > 1e-9 ? v_ok / v : 0.0;
+              for (int j = 0; j < qd_cmd.n; ++j) qd_cmd[j] *= r;
+              sigma *= r;
+            }
+          }
           break;
         }
       }
@@ -355,9 +372,13 @@ void control_loop(LoopContext& c, RobotT& robot) {
       if (c.gt->load(g)) {
         rec.gt_min_sep_m = static_cast<float>(g.sep);
         rec.gt_age_ms = static_cast<float>((t7 - g.t_gt_ns) * 1e-6);
-        if (have_hs && hs.available)
+        // The error of the estimate used in the PREVIOUS cycle: the probe processes every
+        // estimate within one probe period (4 ms) of its publication, so by now it has processed
+        // that one, whatever the phase between the fusion and control periods. (Looking up the
+        // estimate of the current cycle fails whenever the cycle starts right after a publication.)
+        if (prev_est_seq != 0)
           for (int k = 0; k < GtSample::kRing; ++k)
-            if (g.t_obs[k] == hs.t_obs_ns) {
+            if (g.seq[k] == prev_est_seq) {
               rec.est_err_max_m = static_cast<float>(g.err[k]);
               rec.est_err_closest_m = static_cast<float>(g.err_closest[k]);
             }
@@ -397,6 +418,7 @@ void control_loop(LoopContext& c, RobotT& robot) {
       while (t_rel < now) t_rel += c.period_ns;
     }
     rec.flags = flags;
+    prev_est_seq = (have_hs && hs.available) ? hs.seq : 0;
     c.log->push_cycle(rec);
     const int64_t t_q = mono_ns();
     d_enqueue_prev = static_cast<int32_t>(t_q - t_end);
@@ -683,7 +705,7 @@ int main(int argc, char** argv) {
       std::array<Vec3, kKeypoints> kp;
       RobotState ts;
       HumanState est;
-      int64_t last_obs = 0;
+      uint32_t last_seq = 0;
       int64_t t = mono_ns();
       while (gt_run) {
         t += 4'000'000;
@@ -698,8 +720,12 @@ int main(int argc, char** argv) {
           g.sep = best;
           g.t_gt_ns = now;
         }
-        if (fusion.latest(est) && est.available && est.t_obs_ns != last_obs) {
-          last_obs = est.t_obs_ns;
+        ++g.iterations;
+        const bool got = fusion.latest(est);
+        if (!got) ++g.estimate_reads_failed;
+        if (got && est.available && est.seq != last_seq) {
+          last_seq = est.seq;
+          ++g.estimates_seen;
           human.keypoints((est.t_obs_ns - t_sim0) * 1e-9, kp);
           double e = 0, e_closest = NAN, d_closest = 1e9;
           for (int j = 0; j < kKeypoints; ++j) {
@@ -710,7 +736,7 @@ int main(int argc, char** argv) {
             for (const auto& lp : kin.points()) dj = std::min(dj, (lp.p - est.kp[static_cast<size_t>(j)]).norm());
             if (dj < d_closest) { d_closest = dj; e_closest = ej; }
           }
-          g.t_obs[g.head] = est.t_obs_ns;
+          g.seq[g.head] = est.seq;
           g.err[g.head] = e;
           g.err_closest[g.head] = e_closest;
           g.head = (g.head + 1) % GtSample::kRing;
@@ -853,6 +879,16 @@ int main(int argc, char** argv) {
   aux_run = false;
   gt_run = false;
   if (gt_thread.joinable()) gt_thread.join();
+  if (c.gt) {
+    GtSample g;
+    if (gt_slot.load(g)) {
+      JsonWriter w;
+      w.begin_object().kv("iterations", static_cast<int64_t>(g.iterations))
+          .kv("estimate_reads_failed", static_cast<int64_t>(g.estimate_reads_failed))
+          .kv("estimates_seen", static_cast<int64_t>(g.estimates_seen)).end_object();
+      logger.annotate("ground_truth_probe", w.str());
+    }
+  }
   if (wd_thread.joinable()) wd_thread.join();
   op_thread.join();
   for (auto& t : load_threads) t.join();

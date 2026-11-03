@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ablation  # noqa: E402
 import baselines  # noqa: E402
+import behaviour  # noqa: E402
 import faults  # noqa: E402
 import hrc_logs as H  # noqa: E402
 import timing  # noqa: E402
@@ -74,6 +75,11 @@ def main():
     res["fault_sensitivity"] = faults.analyse(a.runs, ("fault_sensitivity",))
     res["tuning_selection"] = baselines.tune(a.runs, Path(a.out) / "tuning_selection.json")
     res["baseline_comparison"] = baselines.compare(a.runs)
+    # release 3.1: dispatched-command check, estimate vs ground truth, floor crossings by state
+    res["behaviour"] = {exp: behaviour.analyse(a.runs, exp) for exp in
+                        ("timing_campaign", "baseline_compare", "fault_injection", "fault_sensitivity", "tuning", "calibration")}
+    res["calibration_rule_applied"] = (json.loads((Path(__file__).resolve().parents[1] / "cfg" / "calibration_v4.json").read_text())
+                                       if (Path(__file__).resolve().parents[1] / "cfg" / "calibration_v4.json").exists() else None)
     res["protocol"] = protocol(a.runs)
     res["conformance"] = conformance(a.runs)
     res["cbf_training"] = cbf(a.runs)

@@ -58,7 +58,8 @@ struct CycleRecord {           // 208 bytes (192 in release 3.0)
   float closest_kp[3];         // position of the keypoint closest to the robot (m, cell frame)
   // ---- release 3.1
   float gt_min_sep_m;          // ground-truth separation (simulator robot state + scripted human), NaN if unavailable
-  float est_err_max_m;         // largest keypoint error of the estimate used vs ground truth at its observation time
+  float est_err_max_m;         // largest keypoint error of the estimate used in the PREVIOUS cycle (matched by its
+                               // publication number) vs ground truth at its t_obs (oldest contributing frame; conservative)
   float final_viol;            // largest violation of the dispatched command: barrier rows (normalised, m/s),
                                // joint box (rad/s) and SSM link speed (m/s); 0 if a stop was decided earlier.
                                // > 1e-6 only together with kFlagFinalCheckFailed (the command was then replaced by a stop)
@@ -67,7 +68,7 @@ struct CycleRecord {           // 208 bytes (192 in release 3.0)
   int32_t d_enqueue_prev_ns;   // duration of the logger enqueue of the PREVIOUS cycle (-1 for idx 0)
   uint8_t cond_mask;           // supervisor conditions active this cycle (bit k <=> condition of mode k)
   float gt_age_ms;             // age of the ground-truth sample at dispatch (probe thread, 250 Hz), NaN if none
-  float est_err_closest_m;     // error of the estimate's keypoint closest to the robot vs ground truth at its observation time
+  float est_err_closest_m;     // same estimate as est_err_max_m: error of its keypoint closest to the robot
   uint8_t pad[5];
 };
 #pragma pack(pop)

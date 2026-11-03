@@ -34,7 +34,9 @@ class TaskSequencer {
   int completed_ = 0;
 };
 
-enum class Strategy { Proposed, HcCbf, Ssm, PotentialField };
+// PotentialFieldSsm (3.1): the potential-field command under the same SSM speed limit as the
+// other strategies, so that PF can also be compared under a shared SSM requirement.
+enum class Strategy { Proposed, HcCbf, Ssm, PotentialField, PotentialFieldSsm };
 Strategy strategy_from_string(const std::string& s);
 const char* to_string(Strategy s);
 
