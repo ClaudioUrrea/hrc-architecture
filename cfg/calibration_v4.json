@@ -1,0 +1,62 @@
+{
+  "rule": "position_margin = ceil_cm(p99(est_err_closest_m)); Z_d = max(0.04, position_margin)",
+  "pooled": {
+    "matched_cycles": 179993,
+    "p50": 0.06569184362888336,
+    "p95": 0.15229803919792173,
+    "p99": 0.21114979445934254,
+    "max": 0.6651384234428406
+  },
+  "position_margin_m": 0.22,
+  "Z_d_m": 0.22,
+  "runs": [
+    {
+      "run": "2026-11-03T03-15-46.322Z_calibration_cal_S1",
+      "manifest_sha256": "04d680bd2b7c2638add8197596e95b717f9401060742ef04d7d52827a004f656",
+      "cycles": 30000,
+      "matched": 29999,
+      "p50": 0.06883996725082397,
+      "p99": 0.21709548324346545
+    },
+    {
+      "run": "2026-11-03T03-26-55.915Z_calibration_cal_S2",
+      "manifest_sha256": "e5d553493679a82af2d842db4bc43f68b638df5b052f71211b348fdbb6b341ca",
+      "cycles": 30000,
+      "matched": 29999,
+      "p50": 0.061314571648836136,
+      "p99": 0.19657856702804571
+    },
+    {
+      "run": "2026-11-03T03-38-01.063Z_calibration_cal_S3",
+      "manifest_sha256": "160155810d1d88e2bcd9b1b01c259abe80f5b2edb68117a6287a295d0df93db2",
+      "cycles": 30000,
+      "matched": 29999,
+      "p50": 0.059076860547065735,
+      "p99": 0.18260145634412767
+    },
+    {
+      "run": "2026-11-03T03-49-09.826Z_calibration_cal_S4",
+      "manifest_sha256": "17c75bf7357a36569a3b7834aadacfd6a3bd53056945d72bcc032c0603bd6bce",
+      "cycles": 30000,
+      "matched": 29999,
+      "p50": 0.0702948197722435,
+      "p99": 0.2224654206633568
+    },
+    {
+      "run": "2026-11-03T04-00-15.612Z_calibration_cal_S5",
+      "manifest_sha256": "5bae3d2fe82fb77de90c7a93c22295a401245108d1ad068b11fdfa20cec97050",
+      "cycles": 30000,
+      "matched": 29998,
+      "p50": 0.06838708743453026,
+      "p99": 0.2199803102016448
+    },
+    {
+      "run": "2026-11-03T04-11-12.332Z_calibration_cal_S6",
+      "manifest_sha256": "886a6232d31b93227872013ed934c59a21d5c5ab183698a03c5453ce91128ab3",
+      "cycles": 30000,
+      "matched": 29999,
+      "p50": 0.06797835230827332,
+      "p99": 0.21624706447124495
+    }
+  ]
+}

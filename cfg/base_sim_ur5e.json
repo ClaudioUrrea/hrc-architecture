@@ -54,7 +54,7 @@
       "port": 47011,
       "timeout_us": 5000
     },
-    "position_margin": 0.0
+    "position_margin": 0.22
   },
   "ssm": {
     "enabled": true,
@@ -62,7 +62,7 @@
     "T_r": 0.1,
     "a_stop": 1.2,
     "C": 0.2,
-    "Z_d": 0.04,
+    "Z_d": 0.22,
     "Z_r": 0.001
   },
   "pf": {
