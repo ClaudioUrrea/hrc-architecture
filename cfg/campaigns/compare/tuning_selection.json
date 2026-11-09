@@ -1,0 +1,42 @@
+{
+  "proposed": {
+    "parameter": "control.kappa",
+    "value": 8.0,
+    "mean_task_cycle_s": 37.072876308375534,
+    "min_sep_m": 0.1942475438117981,
+    "segments": 10,
+    "min_true_sep_m": 0.36753737926483154
+  },
+  "hc_cbf": {
+    "parameter": "control.kappa",
+    "value": 8.0,
+    "mean_task_cycle_s": 36.39990843876188,
+    "min_sep_m": 0.21729770302772522,
+    "segments": 10,
+    "min_true_sep_m": 0.36129170656204224
+  },
+  "ssm": {
+    "parameter": "ssm.C",
+    "value": 0.1,
+    "mean_task_cycle_s": 27.07903954642969,
+    "min_sep_m": 0.2106505185365677,
+    "segments": 10,
+    "min_true_sep_m": 0.3868686854839325
+  },
+  "pf": {
+    "parameter": "pf.k_rep",
+    "value": 0.02,
+    "mean_task_cycle_s": 25.14519648698775,
+    "min_sep_m": 0.24321669340133667,
+    "segments": 10,
+    "min_true_sep_m": 0.4452649652957916
+  },
+  "pf_ssm": {
+    "parameter": "pf.k_rep",
+    "value": 0.08,
+    "mean_task_cycle_s": 33.89882860452187,
+    "min_sep_m": 0.21854440867900848,
+    "segments": 10,
+    "min_true_sep_m": 0.3710539937019348
+  }
+}
