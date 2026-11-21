@@ -34,7 +34,7 @@ stamps, are in `docs/freeze/` on the main branch and in `freeze_records.tar.gz`.
 | `queue4.log`, `watchdog_launches.log` | Log of the campaign queue and launches by its watchdog (chronology, incidents). |
 | `results.json`, `tuning_selection.json`, `SHA256SUMS_results` | Output of `analysis/report.py` at `campaign-v4-report` (pre-registered analysis). |
 | `stop_samples_compare.csv`, `stop_check_compare.csv`, `stop_check_summary.txt` | Stopping check (`tools/stop_samples.py`, `tools/stop_check`). |
-| `results_extra.json`, `timing_miss_detail.json` | Supplementary analyses (`paper/r4_reproduction/`), specified after the campaigns. |
+| `results_extra.json`, `results_supp.json`, `timing_miss_detail.json` | Supplementary analyses (`paper/r4_reproduction/`: `extra_analysis.py`, `supp_r4.py`, `timing_miss_detail.py`), specified after the campaigns. |
 | `manuscript_macros_r4_numbers.tex` | Every number printed in the manuscript, as generated from the files above. |
 | `executables_campaign.tar.gz`, `executables_SHA256SUMS` | Campaign executables built at `campaign-v4` (`hrc_run` SHA-256 3364796a…64573b). The six calibration runs, which precede that tag, used the executable built at `r31-calibration` (rebuildable from `source_r31-calibration.tar.gz`; its commit label is in each calibration manifest). |
 | `source_campaign-v4-report.tar`, `source_r31-calibration.tar.gz`, `git_tags.txt`, `git_log.txt` | Source at the report and pre-registration tags. |

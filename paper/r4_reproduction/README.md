@@ -13,13 +13,14 @@ campaigns. Nothing is typed by hand.
 | 2. Stopping check | `tools/stop_samples.py`, `tools/stop_check` (same tag) | comparison runs | `stop_check_compare.csv`, `stop_check_summary.txt` |
 | 3. Supplementary analyses | `extra_analysis.py` | raw runs, `results.json` | `results_extra.json` |
 | 4. Supplementary timing detail | `timing_miss_detail.py` | raw timing runs | `timing_miss_detail.json` |
-| 5. Macros and tables | `make_numbers.py` | files of steps 1–4, `results.json` of release 3.0 (retained items), the conformance run repeated with release 3.1 | `numbers/r4_numbers.tex`, `numbers/tab_*.tex` |
+| 4b. Supplementary analyses of the final text | `supp_r4.py` | raw runs, `results_extra.json` | `results_supp.json` |
+| 5. Macros and tables | `make_numbers.py` | files of steps 1–4b, `results.json` of release 3.0 (retained items), the conformance run repeated with release 3.1 | `numbers/r4_numbers.tex`, `numbers/tab_*.tex` |
 | 6. Chronology | `make_chronology.py` | `queue4.log` (deposited) | `numbers/r4_chronology.tex` |
 | 7. Figures | `make_figures.py` | `results.json`, `results_extra.json` | `figures/*.pdf` |
 | 8. Build | `build_r4.ps1` (Windows, MiKTeX) | all of the above | manuscript PDF |
 | 9. Marked copy | `make_marked_r4.sh` (latexdiff 1.3.1) | round-3 and round-4 sources, both flattened | marked PDF |
 
-Steps 3 and 4 were specified after the campaigns and are labelled *supplementary* in the
+Steps 3, 4 and 4b were specified after the campaigns and are labelled *supplementary* in the
 manuscript; they describe the same runs in more detail and select, filter or re-weight no run.
 `hp_window_effect.py` computes the supplementary check of the 105 s power-plan change during one
 fault-sensitivity run.
@@ -32,11 +33,12 @@ python3 analysis/report.py --runs runs --out results
 python3 paper/r4_reproduction/extra_analysis.py --repo . --runs runs \
     --results results/results.json --out results_extra.json
 python3 paper/r4_reproduction/timing_miss_detail.py --repo . --runs runs --out timing_miss_detail.json
+python3 paper/r4_reproduction/supp_r4.py --repo . --runs runs --extra results_extra.json --out results_supp.json
 python3 paper/r4_reproduction/make_numbers.py --results results/results.json \
     --extra results_extra.json --results-r30 <release-3.0 results.json> \
     --stop-summary results/stop_check_summary.txt --stop-csv results/stop_check_compare.csv \
     --conformance-r31 <folder with the release-3.1 conformance run> \
-    --miss-detail timing_miss_detail.json --out numbers
+    --miss-detail timing_miss_detail.json --supp results_supp.json --out numbers
 python3 paper/r4_reproduction/make_figures.py --results results/results.json \
     --extra results_extra.json --out figures
 ```
@@ -49,7 +51,7 @@ the generated macro files, which do not contain it.
 
 ## Versions used for the manuscript
 
-* Analysis (steps 1–4): Python 3.10.12, NumPy 1.21.5, SciPy 1.8.0 (Ubuntu 22.04 under WSL2).
+* Analysis (steps 1–4b): Python 3.10.12, NumPy 1.21.5, SciPy 1.8.0 (Ubuntu 22.04 under WSL2).
 * Macros, figures and build (steps 5–8): Python 3.12.10, NumPy 2.1.3, Matplotlib 3.9.2,
   MiKTeX 25.12 (pdfTeX 4.23) on Windows.
 * Marked copy (step 9): latexdiff 1.3.1.
@@ -58,4 +60,6 @@ SHA-256 of the inputs of step 5, as printed in the header of `numbers/r4_numbers
 `results.json` 25c09f27b580f188915f90f70a49eac9a6e00270c5c2f9acce2d8fe6c827383d,
 `results_extra.json` 42a1c55e25996934d964e16bfdb04bd7c0386cb98eb01836c091c7064ce25d42,
 `stop_check_summary.txt` f4e73a7248b0d3a3e66e38b67b724d81d7b94f2ce6430d7cc586bee40d9ba6cb,
-`stop_check_compare.csv` 2ea8655bd660b58f2d028462a3e549af4711168c486bdd6d37a360bf497a1ed8.
+`stop_check_compare.csv` 2ea8655bd660b58f2d028462a3e549af4711168c486bdd6d37a360bf497a1ed8,
+`timing_miss_detail.json` 8652222e20696d6a9c69c0e6398354540c9409f9ddea8965b3e38157d64e6f91,
+`results_supp.json` 55243e2131a8588697934b04c47444139b7c6cc46e39c48937c23b280bfeaf83.

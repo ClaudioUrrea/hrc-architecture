@@ -858,6 +858,88 @@ def r4_additions(res, extra, M, a):
         if M.m.get(k) == MISSING:
             M[k] = "--"
 
+def supp_additions(a, M, T):
+    """Supplementary analyses of the final R4 text (scripts/supp_r4.py -> results_supp.json). Not pre-registered."""
+    S = load(a.supp, a._prov, "results_supp.json (supplementary)") if a.supp else {}
+    S = S or {}
+    keys = []
+    def put(k, v):
+        keys.append(k); M[k] = v
+    u = S.get("U1_timing") or {}
+    d = u.get("duration_s") or {}
+    put("RSuStopEpN", fi(u.get("episodes")))
+    put("RSuStopEpPerH", fi(round(u["episodes_per_h"], -2)) if u.get("episodes_per_h") else MISSING)
+    put("RSuStopEpMedMs", f(d.get("p50"), 0, 1000) if d else MISSING)
+    put("RSuStopEpPNineFiveMs", f(d.get("p95"), 0, 1000) if d else MISSING)
+    put("RSuStopEpMaxS", f(d.get("max"), 1) if d else MISSING)
+    put("RSuStopEpOneCyclePct", f(u.get("share_episodes_le_1_cycle"), 0, 100))
+    put("RSuStopSepEstMed", f(get(u, "sep_est_in_stop.p50"), 2))
+    put("RSuStopSepEstPFive", f(get(u, "sep_est_in_stop.p5"), 2))
+    put("RSuStopSepTrueMed", f(get(u, "sep_true_in_stop.p50"), 2))
+    put("RSuStopHMedMm", f(get(u, "h_geo_in_stop.p50"), 0, 1000))
+    c = S.get("U1_compare") or {}
+    for k, n in (("proposed", "Prop"), ("hc_cbf", "HCCBF"), ("ssm", "SSM"), ("pf", "PF"), ("pf_ssm", "PFSSM")):
+        x = c.get(k) or {}
+        put(f"RSuStill{n}", f(x.get("standstill_share"), 0, 100) if k != "pf" else f(x.get("standstill_share"), 2, 100))
+        put(f"RSuStopEpPerH{n}", fi(round(x["episodes_per_h"], -2)) if x.get("episodes_per_h") else "0")
+    s4 = S.get("U4_logged_stops") or {}
+    put("RSuLogStopN", fi(s4.get("n")))
+    put("RSuLogStopVrMedMms", f(get(s4, "v_r.p50"), 0, 1000))
+    put("RSuLogStopVrMaxMms", f(get(s4, "v_r.max"), 0, 1000))
+    put("RSuLogStopPathExceed", fi(s4.get("path_exceeds_Seq3")))
+    put("RSuLogStopPathRatioMax", f(get(s4, "path_over_Seq3.max"), 2))
+    put("RSuLogStopTimeExceed", fi(s4.get("braking_exceeds_Teq3")))
+    w = S.get("U6_watchdog_stops") or {}
+    put("RSuWatchdogStops", fi(w.get("total")))
+    put("RSuWatchdogBlocks", fi(w.get("blocks_with")))
+    cv = S.get("U2_constraint_violation_split") or {}
+    put("RSuCvGenerated", fi(cv.get("generated")))
+    put("RSuCvInjected", fi(cv.get("after_injected_lunge")))
+    put("RSuCvStoppedGenH", f(cv["stopped_s_generated"] / 3600.0, 1) if cv.get("stopped_s_generated") is not None else MISSING)
+    put("RSuCvStoppedGenPct", f(cv.get("share_of_time_stopped_by_generated"), 1, 100))
+    ab = get(S, "U3_ablation_by_load.paired") or {}
+    def pr(k, fld, nd, sc=1.0):
+        x = ab.get(k) or {}
+        v = x.get(fld)
+        return f(v, nd, sc) if v is not None else MISSING
+    def prci(k, fld, nd, sc=1.0):
+        x = (ab.get(k) or {}).get(fld)
+        return fci(x[0], x[1], nd, sc) if x else MISSING
+    put("RSuAblAOneIdleUs", pr("A1-A3|idle", "median_diff_of_medians_us", 0))
+    put("RSuAblAOneIdleCI", prci("A1-A3|idle", "ci95_us", 0))
+    put("RSuAblAOneLoadUs", pr("A1-A3|load", "median_diff_of_medians_us", 0))
+    put("RSuAblAOneLoadCI", prci("A1-A3|load", "ci95_us", 0))
+    put("RSuAblAThreeAZeroIdleCI", prci("A3-A0|idle", "ci95_us", 0))
+    put("RSuAblAThreeAZeroLoadCI", prci("A3-A0|load", "ci95_us", 1))
+    put("RSuAblATwoLoadMaxMs", pr("A2-A3|load", "median_diff_of_max_ms", 1))
+    put("RSuAblATwoLoadMaxCI", prci("A2-A3|load", "ci95_max_ms", 2))
+    bl = get(S, "U3_ablation_by_load.by_configuration_and_load") or {}
+    put("RSuAblATwoLoadSDRelMs", f((bl.get("A2|load") or {}).get("median_sd_release_ms"), 1))
+    u5 = (S.get("U5_sensitivity_episodes") or {}).get("clustered_x1.5") or {}
+    put("RSuClusTrackEp", fi((u5.get("episodes_by_category") or {}).get("tracking_loss")))
+    put("RSuClusTrackInj", fi((u5.get("injected_by_category") or {}).get("tracking_loss")))
+    # run-bootstrap intervals per category for the reliability table
+    rb = S.get("U2_rates_by_category") or {}
+    rows = T.get("tab_reliability") or []
+    new = []
+    for (k, label), r in zip(CATS, rows):
+        x = rb.get(k)
+        if k == "configuration_inconsistency":
+            cell = "n/a"
+        elif x and x.get("run_bootstrap_ci95") and x.get("episodes"):
+            cell = fci(x["run_bootstrap_ci95"][0], x["run_bootstrap_ci95"][1], 3)
+        elif S:
+            cell = "--"
+        else:
+            cell = MISSING
+        r = r.rstrip()
+        assert r.endswith("\\\\"), r
+        new.append(r[:-2].rstrip() + " & " + cell + " \\\\")
+    if rows:
+        T["tab_reliability"] = new
+    print("supp macros:", len(keys), "missing:", [k for k in keys if M.m.get(k) == MISSING])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", required=True)
@@ -868,6 +950,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--conformance-r31", default="")
     ap.add_argument("--miss-detail", default="")
+    ap.add_argument("--supp", default="")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -896,6 +979,7 @@ def main():
     extra_sections(extra, M)
     a._prov = prov
     r4_additions(res, extra, M, a)
+    supp_additions(a, M, T)
     # names used in the availability table
     for src, dst in (("Fi", "Fi"), ("Ft", "Tim")):
         for k in ("Outside", "Permitted", "Diff", "Scale"):

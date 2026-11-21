@@ -16,7 +16,7 @@ if ($q) { $q | Set-Content -Encoding utf8 data\queue4.log }
 python scripts\make_numbers.py --results data\results.json --extra data\results_extra.json `
   --results-r30 data_r30\results.json --stop-summary data\stop_check_summary.txt `
   --stop-csv data\stop_check_compare.csv --conformance-r31 data\conformance_r31 `
-  --miss-detail data\timing_miss_detail.json --out numbers
+  --miss-detail data\timing_miss_detail.json --supp data\results_supp.json --out numbers
 python scripts\make_chronology.py --log data\queue4.log --out numbers\r4_chronology.tex
 if (-not $SkipFigures) {
   python scripts\make_figures.py --results data\results.json --extra data\results_extra.json --out figures
