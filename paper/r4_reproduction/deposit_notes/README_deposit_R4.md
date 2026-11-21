@@ -3,7 +3,7 @@
 Data deposit of revision 4 of manuscript electronics-4587969 (MDPI *Electronics*), *A
 Hardware-Abstracted Control Architecture with a Barrier-Function Safety Filter for Human–Robot
 Collaboration: Publicly Pre-Registered Simulation Evaluation of Timing, Fault Handling and Safety
-Behaviour*, by Claudio Urrea (University of Santiago of Chile). Licence: CC BY 4.0.
+Behaviour*, by Claudio Urrea (University of Santiago of Chile). Licence: CC BY 4.0, except the third-party documents in `vendor_documents_UR.tar.gz`.
 
 Everything here was produced by running the software; no file was generated, edited or filtered by
 hand. All results are **simulated** (kinematic UR5e model, scripted operator, camera model) on a
@@ -38,7 +38,7 @@ stamps, are in `docs/freeze/` on the main branch and in `freeze_records.tar.gz`.
 | `manuscript_macros_r4_numbers.tex` | Every number printed in the manuscript, as generated from the files above. |
 | `executables_campaign.tar.gz`, `executables_SHA256SUMS` | Campaign executables built at `campaign-v4` (`hrc_run` SHA-256 3364796a…64573b). The six calibration runs, which precede that tag, used the executable built at `r31-calibration` (rebuildable from `source_r31-calibration.tar.gz`; its commit label is in each calibration manifest). |
 | `source_campaign-v4-report.tar`, `source_r31-calibration.tar.gz`, `git_tags.txt`, `git_log.txt` | Source at the report and pre-registration tags. |
-| `vendor_documents_UR.tar.gz` | Copies of the Universal Robots documents used by the conformance test, with their SHA-256 (retrieved 5 November 2026). |
+| `vendor_documents_UR.tar.gz` | Copies of the Universal Robots documents used by the conformance test, with their SHA-256 (retrieved 5 November 2026). These are third-party documents, deposited only so that the conformance checks can be verified; they remain the property of Universal Robots and are **not** covered by the CC BY 4.0 licence of this item. |
 | `freeze_records.tar.gz` | Pre-registration and freeze records with their published hashes. |
 | `MANIFEST_DEPOSIT.sha256` | SHA-256 of every file of this deposit. |
 

@@ -2,7 +2,8 @@
 # Marked copy of manuscript R4 against the round-3 manuscript (Reviewer 2, Point 15).
 #   - both versions are flattened first: every result macro is replaced by its printed value and every
 #     generated table body is inlined, so that changed numbers appear as changed text;
-#   - latexdiff 1.3.1: added text in blue, deleted text in red, NO underlining or strike-through;
+#   - latexdiff 1.3.1: added text in blue, deleted text in red and struck through (so that adjacent deleted and
+#     added words stay apart), NO underlining;
 #     changed equations are marked as a whole (--math-markup=whole); tables, tabulars and TikZ pictures
 #     are treated as blocks (PICTUREENV), so a changed table appears once deleted and once added, whole;
 #     figures are not marked (--graphics-markup=none);
@@ -35,6 +36,8 @@ def flatten(tex, numdir, numfile, bib, extra_num_files=()):
     s = s.replace("\\input{" + bib + "}", P(bib + ".tex").read_text(encoding="utf-8").strip())
     return s
 old = flatten("_R3_base/P2_Electronics_R3.tex", "numbers_r30_old", "r3_numbers.tex", "_R3_base/bibliography_r3")
+# the name of the department was updated without being a change of content: not marked
+old = old.replace("Electrical Engineering Department, Faculty", "Department of Electrical Engineering, Faculty")
 new = flatten("P2_Electronics_R4.tex", "numbers", "r4_numbers.tex", "bibliography_r4", ["numbers/r4_chronology.tex"])
 left = sorted(set(re.findall(r"\\(R[A-Z][A-Za-z]+)\{\}", new)) - {"RepoURL"})
 assert not left, left
@@ -42,8 +45,9 @@ P("diff_base/old_R3_flat.tex").write_text(old, encoding="utf-8")
 P("diff_base/new_R4_flat.tex").write_text(new, encoding="utf-8")
 P("diff_base/marked_preamble.tex").write_text(
     "\\RequirePackage{color}\n"
+    "\\RequirePackage[normalem]{ulem}\n"
     "\\providecommand{\\DIFadd}[1]{{\\color{blue}#1}}\n"
-    "\\providecommand{\\DIFdel}[1]{{\\color{red}#1}}\n"
+    "\\providecommand{\\DIFdel}[1]{{\\color{red}\\sout{#1}}}\n"
     "\\providecommand{\\DIFaddbegin}{}\\providecommand{\\DIFaddend}{}\n"
     "\\providecommand{\\DIFdelbegin}{}\\providecommand{\\DIFdelend}{}\n"
     "\\providecommand{\\DIFmodbegin}{}\\providecommand{\\DIFmodend}{}\n"
@@ -60,11 +64,14 @@ python3 - <<'PYEOF'
 import pathlib
 s = pathlib.Path("diff_base/marked_raw.tex").read_text(encoding="utf-8")
 note = (r"\noindent\fbox{\parbox{\linewidth}{\small\textbf{Marked copy (round 4).} Changes with respect to the "
-        r"round-3 manuscript: added text in \textcolor{blue}{blue}, deleted text in \textcolor{red}{red}, without "
-        r"underlining. Changed equations are shown whole, the old version in red followed by the new one in blue; changed tables are shown whole "
+        r"round-3 manuscript: added text in \textcolor{blue}{blue}, deleted text in \textcolor{red}{red} and struck through, "
+        r"without underlining. Changed equations are shown whole, the old version in red followed by the new one in blue; changed tables are shown whole "
         r"in blue; the old version of a changed table is not reproduced here (it is in the round-3 manuscript). Numbers are shown as printed in each version. Figures are not marked; all figures were regenerated "
         r"from the release-3.1 records. Generated with latexdiff 1.3.1 (script \texttt{make\_marked\_r4.sh}).}}\par\medskip" + "\n")
 s = s.replace("\\begin{document}", "\\begin{document}\n" + note, 1)
+import re
+# a label must stay inside the group that \\DIFaddbeginFL opens around a new caption
+s = re.sub(r"\\DIFaddendFL\s*(\\label\{[^}]*\})", r"\1\\DIFaddendFL ", s)
 pathlib.Path("P2_Electronics_R4_marked.tex").write_text(s, encoding="utf-8")
 print("written P2_Electronics_R4_marked.tex", len(s))
 PYEOF
