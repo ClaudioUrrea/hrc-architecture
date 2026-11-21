@@ -20,7 +20,10 @@ import numpy as np  # noqa: E402
 # reference categorical palette (light mode), fixed order; text in ink tokens, never series colour
 S1, S2, S3, S4 = "#2a78d6", "#eb6834", "#1baf7a", "#6250d6"
 INK, INK2, GRID, MUTED = "#0b0b0b", "#52514e", "#e4e3df", "#9b9a95"
-plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 8, "axes.edgecolor": INK2, "axes.labelcolor": INK,
+# Palatino Linotype (the text face of the MDPI template), in text and in mathtext; minus signs as U+2212
+plt.rcParams.update({"font.family": "serif", "font.serif": ["Palatino Linotype", "TeX Gyre Pagella", "Palatino", "URW Palladio L"],
+                     "mathtext.fontset": "custom", "mathtext.rm": "Palatino Linotype", "mathtext.it": "Palatino Linotype:italic",
+                     "mathtext.bf": "Palatino Linotype:bold", "axes.unicode_minus": True, "font.size": 8, "axes.edgecolor": INK2, "axes.labelcolor": INK,
                      "xtick.color": INK2, "ytick.color": INK2, "axes.spines.top": False, "axes.spines.right": False,
                      "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.6, "axes.axisbelow": True,
                      "legend.frameon": False, "pdf.fonttype": 42, "savefig.bbox": "tight", "savefig.dpi": 300})
@@ -74,7 +77,7 @@ def fig_timing(res, ex, out):
     v = [st[k] * 1000 for k in keys]
     ax.barh(names[::-1], v[::-1], color=S1, height=0.6)
     for i, x in enumerate(v[::-1]):
-        ax.text(x, i, f" {x:.3g}", va="center", fontsize=7, color=INK)
+        ax.text(x, i, " " + f"{x:.3g}".replace("-", "\u2212"), va="center", fontsize=7, color=INK)
     ax.set_xlabel("Median per cycle (µs)"); ax.grid(axis="y", visible=False)
     label(ax, "(c) Stage medians")
     # (d) estimate age
@@ -169,7 +172,7 @@ def fig_compare(res, ex, out):
             ax.plot(r["mean_diff"] * sc, i, "o", ms=6, color=col, mec="white", mew=1)
         ax.axvline(0, color=INK2, lw=1)
         ax.set_yticks(range(len(BORDER))); ax.set_yticklabels([BNAME[b] for b in BORDER]); ax.invert_yaxis()
-        ax.set_xlabel(f"Proposed $-$ baseline ({unit})"); ax.grid(axis="y", visible=False)
+        ax.set_xlabel(f"Proposed \u2212 baseline ({unit})"); ax.grid(axis="y", visible=False)
         label(ax, title)
     fig.text(0.01, -0.06, "Paired mean differences with BCa 95% intervals over 30 segments. Blue: Holm-adjusted p < 0.05 "
              "(8 tests); grey: not significant, which is not evidence of equivalence; green: secondary endpoint, not tested.",
@@ -201,7 +204,7 @@ def fig_behaviour(res, ex, out):
         ax.step(eb[1:], 1 - np.cumsum(eh) / eh.sum(), where="post", color=S1, lw=1.5)
         ax.set_yscale("log"); ax.set_ylim(1e-6, 1.5)
     if margin:
-        ax.axvline(margin, color=INK2, lw=1, ls="--"); ax.text(margin, 0.3, f" $m_p$ = {margin:.2f} m", color=INK2, fontsize=7)
+        ax.axvline(margin, color=INK2, lw=1, ls="--"); ax.text(margin, 0.3, f" $m_p$ = {margin:.2f} m".replace("-", "\u2212"), color=INK2, fontsize=7)
     ax.axvline(0.04, color=INK2, lw=1, ls=":"); ax.text(0.04, 0.02, " 0.04 m", color=INK2, fontsize=7)
     ax.set_xlim(0, 0.8); ax.set_xlabel("Error of the closest keypoint (m)"); ax.set_ylabel("Fraction of matched cycles above")
     label(ax, "(b) Estimate error")
@@ -218,7 +221,7 @@ def fig_behaviour(res, ex, out):
         nz = v > 0
         ax.barh((y + (j - (len(camps) - 1) / 2) * w)[nz], v[nz], height=w * 0.9, color=col, label=nm)
     ax.set_xscale("log"); ax.set_xlim(1e-4, 150); ax.set_yticks(y); ax.set_yticklabels(names); ax.invert_yaxis()
-    ax.set_xlabel("Share of cycles (%)"); ax.grid(axis="y", visible=False); ax.legend(fontsize=6.5, loc="center right")
+    ax.set_xlabel("Share of cycles (%)"); ax.grid(axis="y", visible=False); ax.legend(fontsize=6.5, loc="upper center", bbox_to_anchor=(0.45, -0.2), ncol=3, handlelength=1.2, columnspacing=1.0)
     label(ax, "(c) Reported mode")
     fig.tight_layout(); fig.savefig(out); plt.close(fig)
 
