@@ -1,48 +1,54 @@
-# hrc-architecture 3.x
+# hrc-architecture 3.1
 
 A hardware-abstracted control architecture for human–robot collaboration with a
 barrier-function safety filter. It has three layers:
 
 * a hardware-abstraction layer: a Universal Robots RTDE adapter, tested against the vendor's
   URSim controller, and KUKA FRI and ABB EGM adapters, which compile but were not evaluated;
-* a control layer: a 20 ms control loop with a CBF quadratic program that combines geometric
-  constraints tightened for the measured age of the human-state estimate, an optional learned
-  barrier that abstains near the separation floor, an ISO/TS 15066 speed-and-separation limit,
-  and one supervisor with a single priority order;
-* an integration layer: Modbus TCP and REST. OPC-UA is optional and was not built in the
+* a control layer: a 20 ms control loop with one quadratic program that imposes the
+  supervisor's speed limits, an ISO/TS 15066 speed-and-separation limit, an optional learned
+  barrier that abstains near the separation floor, and geometric barriers tightened for the
+  measured age and the calibrated position error of the human-state estimate; every dispatched
+  command is checked against all constraints and replaced by a stop if it fails;
+* an integration layer: Modbus TCP and REST. OPC UA is optional and was not built in the
   evaluated binary.
 
-This is the software evaluated in revision 3 of manuscript electronics-4587969 (MDPI
-*Electronics*), *A Hardware-Abstracted Control Architecture with a Barrier-Function Safety
-Filter for Human–Robot Collaboration: Pre-Registered Evaluation of Timing, Fault Handling and
-Interface Conformance*.
-
-> [!WARNING]
-> **Correction of data provenance (12 October 2026).** The data files in releases 1.0.0 to 2.1.0
-> of this repository and of the Figshare deposit [doi:10.6084/m9.figshare.33194013](https://doi.org/10.6084/m9.figshare.33194013)
-> are **not experimental records**. The original logs and the implementation source code of the
-> study described in earlier versions of manuscript electronics-4587969 were lost, and no backup
-> exists. The files deposited with those releases were reconstructed from the summary statistics
-> printed in the manuscript, so they cannot verify it (`docs/PROVENANCE_NOTICE.md`). Release 3.x
-> is a re-implementation and contains no data generated that way. Every result reported in the
-> revised manuscript comes from raw, hash-manifested run directories written by the programs
-> below (`docs/DATA_POLICY.md`). The history of this repository is kept unchanged so that it
-> remains auditable; releases 1.0.0–2.1.0 remain under tag `v2.1.0`.
+This is the software evaluated in revision 4 of manuscript electronics-4587969 (MDPI
+*Electronics*). Release 3.1 corrects three defects of release 3.0 found in review (speed scaling
+applied after the QP, the supervisor's handling of simultaneous conditions, and a data race in
+the sequence-lock slot); `docs/CHANGES_3.1.md` lists every change.
 
 **This software must not be connected to a robot that can reach a person.** It has not been
-assessed against IEC 61508, ISO 13849, ISO 10218 or ISO/TS 15066, and the emergency stop it
-issues is not a safety-rated function.
+assessed against IEC 61508, ISO 13849, ISO 10218 or ISO/TS 15066, and the stop it issues is not
+a safety-rated function.
 
-## Frozen states
+## Pre-registration and frozen states
 
-| Tag | Commit | What it fixes |
-|---|---|---|
-| `campaign-v3` | `1a51a57` | Design, trained barrier model and every campaign configuration, frozen before the first campaign run. Its identifiers are published in `PREREGISTRATION.md`. |
-| `campaign-v3-compare` | `80b8f72` | Comparison configurations, generated from the tuning runs by the rule frozen at `campaign-v3`. |
-| `campaign-v3-report` | `a2ea7bc` | Commit that generated `results.json` (a formatting-only fix of `tools/paper_numbers.py`). |
+| Tag | What it fixes |
+|---|---|
+| `r31-calibration` | Code, written pre-registration (`docs/PREREGISTRATION_3.1.md`: calibration rule, campaign design, hypotheses, tuning rule, analysis) and analysis scripts, published before the first run. |
+| `campaign-v4` | Configuration produced by the calibration rule, and every campaign configuration except the comparison. |
+| `campaign-v4-compare` | Comparison configurations, generated from the tuning runs by the rule fixed at `r31-calibration`. |
+| `campaign-v4-report` | Commit used to compute `results.json`. |
 
-Branch `release-3.x` ends at `campaign-v3-report`. The raw run records, the campaign executables
-and `results.json` are deposited at Figshare, DOI [10.6084/m9.figshare.34845711](https://doi.org/10.6084/m9.figshare.34845711).
+The records of their identifiers, committed through the GitHub interface at the time of each
+publication, are in `docs/freeze/` on the main branch. The scripts that turn `results.json`
+into the numbers, tables and figures of the manuscript are in `paper/r4_reproduction/` (with a
+README giving the route and the commands); those of the round-3 manuscript are in
+`paper/r3_reproduction/`.
+
+The raw run records of release 3.1, the campaign executables and `results.json` are deposited
+at Figshare, DOI [10.6084/m9.figshare.35081113](https://doi.org/10.6084/m9.figshare.35081113).
+The records of release 3.0 remain at DOI
+[10.6084/m9.figshare.34845711](https://doi.org/10.6084/m9.figshare.34845711) (tags `campaign-v3`,
+`campaign-v3-compare`, `campaign-v3-report`, unchanged).
+
+## Provenance
+
+Releases 1.0.0–2.1.0 of this repository did not contain experimental records; release 3.x is a
+re-implementation, and every result it reports comes from raw, hash-manifested run directories
+written by the programs below. `docs/PROVENANCE_NOTICE.md` and `docs/DATA_POLICY.md` give the
+details. The history of the repository is kept unchanged so that it remains auditable.
 
 ## Layout
 
@@ -55,7 +61,8 @@ train/            barrier-network training (NumPy)
 cfg/              base configuration, robot DH files, fault-rate rationale, generated campaigns
 tools/            make_campaigns.py, run_campaign.py, worklog.py, code_metrics.sh
 analysis/         readers that verify hashes, and one script per reported result; report.py
-docs/             RUNBOOK, DATA_POLICY, PROVENANCE_NOTICE
+docs/             RUNBOOK, BUILD, PREREGISTRATION_3.1, CHANGES_3.1, DATA_POLICY, PROVENANCE_NOTICE
+paper/           r3_reproduction/, r4_reproduction/ (scripts of the manuscript)
 ```
 
 ## Build
@@ -81,7 +88,7 @@ and mirrored to every backup directory with hash verification.
 
 ## Reproducing the results
 
-`docs/RUNBOOK.md` gives the procedure: training, URSim conformance, the campaigns
+`docs/RUNBOOK.md` gives the procedure and `docs/BUILD.md` the build commands: training, URSim conformance, the campaigns
 (`tools/make_campaigns.py`, `tools/run_campaign.py`) and `analysis/report.py`, which writes
 `results/results.json` with the run directories (and their manifest hashes) behind every number.
 Its first section states how the campaigns of the article were actually executed. To recompute
