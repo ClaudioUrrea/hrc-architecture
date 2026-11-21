@@ -615,7 +615,8 @@ def conformance(res30, M, T):
         rows.append(row(i["item_id"], brk(esc(i["document_clause"])), brk(esc(i["expected"])), brk(esc(i["observed"])),
                         esc(i["result"])))
         if i["item_id"] == "UR-06":
-            M["RConfURSixObserved"] = esc(i["observed"])
+            m6 = re.search(r"([0-9]+(?:\.[0-9]+)?)", i["observed"])
+            M["RConfURSixObserved"] = m6.group(1) if m6 else MISSING
         for iid, key in (("UR-11", "RConfURElevenMs"), ("UR-10", "RConfURTenMs")):
             if i["item_id"] == iid:
                 m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*ms", i["observed"])
@@ -782,7 +783,7 @@ def r4_additions(res, extra, M, a):
         M["RConfRThreeOneFail"] = fi(sum(i["result"] == "fail" for i in items))
         M["RConfRThreeOneInfo"] = fi(sum(i["result"] == "info" for i in items))
         M["RConfRThreeOneVersion"] = man.get("controller_version") or MISSING
-        M["RConfRThreeOneDate"] = man.get("end_utc", "")[:10] or MISSING
+        M["RConfRThreeOneDate"] = (lambda v: f"{int(v[8:10])} {['January','February','March','April','May','June','July','August','September','October','November','December'][int(v[5:7])-1]} {v[:4]}" if len(v) >= 10 else MISSING)(man.get("end_utc", ""))
         for iid, key in (("UR-06", "RConfRThreeOneURSix"), ("UR-11", "RConfRThreeOneURElevenMs"),
                          ("UR-10", "RConfRThreeOneURTenMs")):
             it = [i for i in items if i["item_id"] == iid]
@@ -798,6 +799,60 @@ def r4_additions(res, extra, M, a):
                   "RConfRThreeOneDate", "RConfRThreeOneURSix", "RConfRThreeOneURElevenMs", "RConfRThreeOneURTenMs",
                   "RConfRThreeOneItems", "RConfRThreeOneManifest"):
             M[k] = MISSING
+
+    # ---- review of 21.11.2026: further macros (supplementary where stated in the text)
+    tcy = t.get("cycles") or {}
+    M["RTimSkippedRel"] = fi(tcy.get("skipped_releases_from_t_release"))
+    blocks = get(extra, "timing_behaviour.blocks", []) or []
+    if blocks:
+        per = 100 * 60 * 50  # cycles of a 100-min block at 50 Hz
+        worst = max(blocks, key=lambda b: per - b["cycles"])
+        M["RTimSkippedBlockMax"] = fi(per - worst["cycles"])
+        M["RTimSkippedBlockName"] = worst["variant"].rsplit("_", 1)[-1]
+        r = sorted(b["exec_max_ms"] / b["exec_p99_ms"] for b in blocks)
+        n = len(r)
+        med = r[n // 2] if n % 2 else 0.5 * (r[n // 2 - 1] + r[n // 2])
+        M["RBlkMaxToPNineNine"] = f(med, 1)
+    else:
+        for k in ("RTimSkippedBlockMax", "RTimSkippedBlockName"):
+            M[k] = MISSING
+    un = (md or {}).get("unclosed_runs") or {}
+    nint = len(un.get("timing_campaign", []))
+    M["RTimBlockBoundWorst"] = fsig(binom_upper((xb or 0) + nint, (nb or 0) + nint), 2) if md and nb else MISSING
+    M["RTimBlocksPlusInterrupted"] = fi((nb or 0) + nint) if md and nb else MISSING
+    # stops of the QP chain, timing campaign (proposed controller)
+    tim = ((res.get("behaviour") or {}).get("timing_campaign") or {}).get("proposed") or {}
+    cs = tim.get("controller_stops") or {}
+    if cs:
+        tot = cs.get("qp_failed", 0) + cs.get("limit_conflict", 0)
+        M["RBehTimQpStopsTotal"] = fi(tot)
+        M["RBehTimQpStopsPct"] = fpct(tot, tim.get("cycles"), 1)
+    else:
+        M["RBehTimQpStopsTotal"] = M["RBehTimQpStopsPct"] = MISSING
+    # geometric fallback (raised after every relaxation of the QP; only the proposed controller has a learned row)
+    tb = (extra or {}).get("timing_behaviour") or {}
+    mf = tb.get("mode_fraction") or {}
+    M["RBehTimFallback"] = f(mf.get("geometric_fallback"), 2, 100)
+    M["RBehTimDegradedStream"] = f(mf.get("degraded_stream"), 2, 100)
+    cbx = (extra or {}).get("compare_behaviour") or {}
+    cmf = cbx.get("mode_fraction") or {}
+    pcy = ((cbx.get("by_strategy") or {}).get("proposed") or {}).get("cycles")
+    if cmf and pcy and cbx.get("cycles"):
+        M["RCmpFallbackPropPct"] = f(cmf.get("geometric_fallback", 0) * cbx["cycles"] / pcy, 0, 100)
+    else:
+        M["RCmpFallbackPropPct"] = MISSING
+    # estimated-floor episodes against the raised floor (0.30 m) of geometric fallback
+    for exp, P in (("timing_campaign", "Tim"), ("baseline_compare", "Cmp"), ("fault_injection", "Inj")):
+        L = get((res.get("behaviour") or {}).get(exp) or {}, "proposed.below_floor_estimated.list", []) or []
+        M[f"RX{P}EstRaisedFloor"] = fi(sum(1 for x in L if x.get("floor_m", 0) > 0.29)) if L else "0"
+    # timing campaign: injected faults and constraint-violation episodes
+    fit = res.get("faults_in_timing_campaign") or {}
+    pc = fit.get("per_category") or {}
+    M["RFtCvInjected"] = fi((pc.get("constraint_violation") or {}).get("injected"))
+    M["RFtCvEpisodes"] = fi(get(fit, "reliability.per_category.constraint_violation.events"))
+    # SSM baseline: intrusion distance selected by the tuning rule
+    ts = res.get("tuning_selection") or {}
+    M["RTuneSSMCmm"] = f((ts.get("ssm") or {}).get("value"), 0, 1000) if (ts.get("ssm") or {}).get("parameter") == "ssm.C" else MISSING
     # no memory-allocation fault is injected in the timing campaign (rate 0): not a missing value
     for k in ("RFtDetMaxMem", "RFtDetMedMem"):
         if M.m.get(k) == MISSING:

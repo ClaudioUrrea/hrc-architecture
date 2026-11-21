@@ -45,13 +45,16 @@ def main():
     TS = r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)"
     start = lambda c: first(rf"^=== {c} start {TS}", t)
     pushed = lambda tag: first(rf"PUBLISHED tag={re.escape(tag)} \S+ github_pushed_at={TS}", t)
-    record = lambda p: first(rf"published record {re.escape(p)} \({TS}\)", t)
+    # GitHub server time of the commit of the record (RECORD line), not the queue-side confirmation time
+    record = lambda p: first(rf"RECORD {re.escape(p)} commit=[0-9a-f]+ {TS}", t)
     m = {}
     m["ChrTuneStart"] = start("tuning")
     m["ChrCompareStart"] = start("compare")
     m["ChrTimingStart"] = start("timing")
     m["ChrProtocolStart"] = start("protocol bench")
     m["ChrReportTag"] = start("report")
+    m["ChrMetricsFatal"] = first(rf"^=== FATAL {TS}: code_metrics", t)
+    m["ChrMetricsDone"] = first(rf"^=== code metrics done {TS}", t)
     cp = pushed("campaign-v4-compare")
     m["ChrCompareTag"] = cp
     m["ChrComparePushed"] = cp
