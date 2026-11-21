@@ -32,6 +32,7 @@ def flatten(tex, numdir, numfile, bib, extra_num_files=()):
     s = re.sub(r"\\gtab\{([^}]*)\}", lambda g: "\n".join(l for l in (P(numdir) / f"{g.group(1)}.tex").read_text(encoding="utf-8").splitlines() if not l.startswith("%")), s)
     s = re.sub(r"\\(R[A-Za-z]+|Chr[A-Za-z]+)\{\}", lambda g: M.get(g.group(1), g.group(0)), s)
     s = re.sub(r"\\InputIfFileExists\{numbers/[^}]*\}\{\}\{[^}]*\}\n", "", s)
+    s = re.sub(r"\\InputIfFileExists\{numbers/[^}]*\}\{\}\{\\typeout\{[^}]*\}\}\n", "", s)
     s = s.replace("\\makeatletter\n\\newcommand{\\gtab}[1]{\\@@input numbers/#1.tex }\n\\makeatother\n", "")
     s = s.replace("\\input{" + bib + "}", P(bib + ".tex").read_text(encoding="utf-8").strip())
     return s
@@ -39,6 +40,21 @@ old = flatten("_R3_base/P2_Electronics_R3.tex", "numbers_r30_old", "r3_numbers.t
 # the name of the department was updated without being a change of content: not marked
 old = old.replace("Electrical Engineering Department, Faculty", "Department of Electrical Engineering, Faculty")
 new = flatten("P2_Electronics_R4.tex", "numbers", "r4_numbers.tex", "bibliography_r4", ["numbers/r4_chronology.tex"])
+# Acknowledgments and the software-development statement (Section 5.11) were rewritten at the author's request
+# without being changes of content of the study: the old wording is replaced by the new one, so they are not marked
+# and the deleted wording does not appear in the marked copy.
+def para_after(t, key):
+    i = t.index(key); j = t.index("\n", i); return i, j
+for key in ("\\acknowledgments{",):
+    oi, oj = para_after(old, key); ni, nj = para_after(new, key)
+    old = old[:oi] + new[ni:nj] + old[oj:]
+lab = "\\label{sec:ai}"
+oi = old.index("\n\n", old.index(lab)) + 2; oj = old.index("\n", oi)
+ni = new.index("\n\n", new.index(lab)) + 2; nj = new.index("\n", ni)
+old = old[:oi] + new[ni:nj] + old[oj:]
+assert "same tool was used in preparing the text" not in old
+# self-contained clean manuscript (macros, tables and bibliography inlined): compiles alone, e.g. on Overleaf
+P("P2_Electronics_R4_clean.tex").write_text(new, encoding="utf-8")
 left = sorted(set(re.findall(r"\\(R[A-Z][A-Za-z]+)\{\}", new)) - {"RepoURL"})
 assert not left, left
 P("diff_base/old_R3_flat.tex").write_text(old, encoding="utf-8")
