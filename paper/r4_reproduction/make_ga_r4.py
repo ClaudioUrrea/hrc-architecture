@@ -25,6 +25,11 @@ INK, INK2, MUTED, LINE, PANEL = "#0b0b0b", "#52514e", "#9b9a95", "#d6d5d0", "#f5
 RED = "#c00000"
 MISSING = "??"
 
+# Palatino Linotype, as in the figures of the article; minus signs as U+2212
+plt.rcParams.update({"font.family": "serif", "font.serif": ["Palatino Linotype", "TeX Gyre Pagella", "Palatino", "URW Palladio L"],
+                     "mathtext.fontset": "custom", "mathtext.rm": "Palatino Linotype", "mathtext.it": "Palatino Linotype:italic",
+                     "mathtext.bf": "Palatino Linotype:bold", "axes.unicode_minus": True, "pdf.fonttype": 42})
+
 
 def read_macros(path):
     txt = Path(path).read_text(encoding="utf-8") if Path(path).exists() else ""
@@ -43,13 +48,14 @@ def plain(v):
     m = re.fullmatch(r"(-?[\d.]+)\\times10\^\{(-?\d+)\}", s)
     if m:
         sup = str.maketrans("-0123456789", "\u207b\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079")
-        return f"{m.group(1)} \u00d7 10{m.group(2).translate(sup)}"
-    return s.replace("{", "").replace("}", "").replace("\\", "")
+        return f"{m.group(1)} \u00d7 10{m.group(2).translate(sup)}".replace("-", "\u2212")
+    s = s.replace("{", "").replace("}", "").replace("\\", "")
+    return re.sub(r"(?<![A-Za-z])-(?=[\d.])", "\u2212", s)
 
 
 def num(v):
     try:
-        return float(plain(v).replace(",", ""))
+        return float(plain(v).replace(",", "").replace("\u2212", "-"))
     except (ValueError, AttributeError):
         return None
 
@@ -71,7 +77,7 @@ def main():
     def txt(x, y, s, size=9, color=INK, weight="normal", ha="left", va="center", style="normal"):
         c = RED if s == MISSING else color
         ax.text(x, y, s, fontsize=size, color=c, fontweight=weight, ha=ha, va=va, fontstyle=style,
-                family="DejaVu Sans")
+                family="serif")
 
     def box(x, y, w, h, fc, ec=LINE, lw=1.0, r=0.06):
         ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}", fc=fc, ec=ec, lw=lw))
@@ -143,7 +149,7 @@ def main():
             txt(x + 0.28, y + 0.20, lab, size=7.7, color=INK2)
             vcol = RED if MISSING in val else INK
             ax.text(x + pw - 0.20, y + 0.20, val, fontsize=9.2, color=vcol, fontweight="bold", ha="right",
-                    va="center", family="DejaVu Sans")
+                    va="center", family="serif")
         box(x + 0.12, 1.09, pw - 0.24, 0.72, PANEL, ec=LINE, lw=0.8, r=0.05)
         txt(x + pw / 2, 1.45, note, size=7.8, color=RED if note == MISSING else INK, ha="center", style="italic")
         if k < 2:
@@ -159,7 +165,7 @@ def main():
     for i, (big, small) in enumerate(stats):
         xs = 0.55 + i * 2.25
         ax.text(xs, 0.56, big, fontsize=13, fontweight="bold", color=RED if MISSING in big else INK, va="center",
-                family="DejaVu Sans")
+                family="serif")
         txt(xs, 0.27, small, size=7.2, color=INK2)
         if i:
             ax.plot([xs - 0.18, xs - 0.18], [0.22, 0.68], color=LINE, lw=1.0)
