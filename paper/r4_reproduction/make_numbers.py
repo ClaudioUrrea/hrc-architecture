@@ -912,6 +912,10 @@ def supp_additions(a, M, T):
     put("RSuAblAThreeAZeroIdleCI", prci("A3-A0|idle", "ci95_us", 0))
     put("RSuAblAThreeAZeroLoadCI", prci("A3-A0|load", "ci95_us", 1))
     put("RSuAblATwoLoadMaxMs", pr("A2-A3|load", "median_diff_of_max_ms", 1))
+    put("RSuAblATwoaIdleUs", pr("A2a-A3|idle", "median_diff_of_medians_us", 0))
+    put("RSuAblATwoaIdleCI", prci("A2a-A3|idle", "ci95_us", 0))
+    put("RSuAblATwobIdleUs", pr("A2b-A3|idle", "median_diff_of_medians_us", 0))
+    put("RSuAblATwobIdleCI", prci("A2b-A3|idle", "ci95_us", 0))
     put("RSuAblATwoLoadMaxCI", prci("A2-A3|load", "ci95_max_ms", 2))
     bl = get(S, "U3_ablation_by_load.by_configuration_and_load") or {}
     put("RSuAblATwoLoadSDRelMs", f((bl.get("A2|load") or {}).get("median_sd_release_ms"), 1))
