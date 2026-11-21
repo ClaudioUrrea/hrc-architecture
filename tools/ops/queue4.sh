@@ -101,7 +101,10 @@ publish_record() {  # local-linux-path repo-path message
   done
   return 1
 }
-has_label() { strings -a "$ROOT/build/hrc_run" | grep -qx "$1"; }   # exact embedded build label
+# Exact build label compiled into hrc_core (run_logger.cpp writes it into every run manifest as
+# host.git_commit). Read from the compile flags of the fresh build: the compiler inlines the
+# string literal as immediates, so it cannot be found with `strings`.
+has_label() { grep -q "HRC_GIT_COMMIT=\\\\\"$1\\\\\"" "$ROOT/build/CMakeFiles/hrc_core.dir/flags.make" 2>/dev/null; }
 build_and_test() {  # builds at HEAD (configure + compile as owner), runs ctest, checks the label
   local want; want=$("${GIT[@]}" rev-parse --short=12 HEAD)
   "${AS_OWNER[@]}" rm -rf "$ROOT/build" 2>/dev/null || rm -rf "$ROOT/build"
@@ -226,7 +229,11 @@ if ! ls runs/*_protocol_bench/MANIFEST.sha256 >/dev/null 2>&1; then
   say "=== protocol bench done $(ts)"
 fi
 if ! ls runs/*_code_metrics/MANIFEST.sha256 >/dev/null 2>&1; then
-  CM=$("${AS_OWNER[@]}" tools/code_metrics.sh runs 2>> "$LOG") || die "code_metrics.sh failed"
+  # runs/ is root-owned; code_metrics needs the owner for git, so it writes to a staging dir first
+  CMTMP=$(mktemp -d /opt/work/cm_stage.XXXXXX) && chown "$OWNER": "$CMTMP" || die "code_metrics staging dir failed"
+  CMS=$("${AS_OWNER[@]}" tools/code_metrics.sh "$CMTMP" 2>> "$LOG") || die "code_metrics.sh failed"
+  CM=runs/$(basename "$CMS")
+  mv -n "$CMS" "$CM" && [ -f "$CM/MANIFEST.sha256" ] && rmdir "$CMTMP" && chown -R root: "$CM" || die "code_metrics move failed"
   chmod -R a-w "$CM"
   for b in "${BACKUP_DIRS[@]}"; do
     cp -a "$CM" "$b/" && ( cd "$b/$(basename "$CM")" && sha256sum -c --quiet MANIFEST.sha256 ) || die "code metrics backup failed"
