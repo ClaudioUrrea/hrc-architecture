@@ -13,8 +13,11 @@ barrier-function safety filter. It has three layers:
 * an integration layer: Modbus TCP and REST. OPC UA is optional and was not built in the
   evaluated binary.
 
-This is the software evaluated in revision 4 of manuscript electronics-4587969 (MDPI
-*Electronics*). Release 3.1 corrects three defects of release 3.0 found in review (speed scaling
+This is the software evaluated in the article accepted on 23 November 2026 in MDPI
+*Electronics* (manuscript electronics-4587969, revision 4), *A Hardware-Abstracted Control
+Architecture with a Barrier-Function Safety Filter for Human–Robot Collaboration: Publicly
+Pre-Registered Simulation Evaluation of Timing, Fault Handling and Safety Behaviour*.
+Release 3.1 corrects three defects of release 3.0 found in review (speed scaling
 applied after the QP, the supervisor's handling of simultaneous conditions, and a data race in
 the sequence-lock slot); `docs/CHANGES_3.1.md` lists every change.
 
