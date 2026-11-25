@@ -1,5 +1,20 @@
 # hrc-architecture 3.x
 
+> **Version evaluated in the published article: release 3.1, on branch [`release-3.1`](https://github.com/ClaudioUrrea/hrc-architecture/tree/release-3.1).**
+>
+> Urrea, C. A Hardware-Abstracted Control Architecture with a Barrier-Function Safety Filter for Human–Robot Collaboration: Publicly Pre-Registered Simulation Evaluation of Timing, Fault Handling and Safety Behaviour. *Electronics* (MDPI), 2026. Manuscript electronics-4587969, accepted on 23 November 2026; the DOI of the article will be added here on publication.
+>
+> | Tag | Commit | What it fixes |
+> |---|---|---|
+> | [`r31-calibration`](https://github.com/ClaudioUrrea/hrc-architecture/tree/r31-calibration) | `1511fd5` | Code, written pre-registration (`docs/PREREGISTRATION_3.1.md`), calibration rule, campaign generator and analysis, published before the first run |
+> | [`campaign-v4`](https://github.com/ClaudioUrrea/hrc-architecture/tree/campaign-v4) | `f5cb16b` | Configuration of every campaign, frozen after the calibration runs |
+> | [`campaign-v4-compare`](https://github.com/ClaudioUrrea/hrc-architecture/tree/campaign-v4-compare) | `ab88b07` | Comparison configurations, generated from the tuning runs by the fixed rule |
+> | [`campaign-v4-report`](https://github.com/ClaudioUrrea/hrc-architecture/tree/campaign-v4-report) | `ab88b07` | Commit that computed `results.json` (the same commit as `campaign-v4-compare`) |
+>
+> The records of these identifiers, committed with GitHub server time stamps, are in [`docs/freeze/`](docs/freeze) on this branch. Build instructions (`docs/BUILD.md`), the list of changes from release 3.0 (`docs/CHANGES_3.1.md`) and the scripts that turn `results.json` into the numbers, tables and figures of the article (`paper/r4_reproduction/`) are on branch `release-3.1`. The raw, hash-manifested records of every release-3.1 run are deposited at Figshare, DOI [10.6084/m9.figshare.35081113](https://doi.org/10.6084/m9.figshare.35081113) (CC BY 4.0).
+>
+> **The rest of this page describes release 3.0** (revision 3 of the manuscript, tags `campaign-v3*`). Its records remain deposited unchanged (DOI [10.6084/m9.figshare.34845711](https://doi.org/10.6084/m9.figshare.34845711)); its results are superseded by those of release 3.1.
+
 A hardware-abstracted control architecture for human–robot collaboration with a
 barrier-function safety filter. It has three layers:
 
