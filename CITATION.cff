@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 title: >-
-  HRC-Architecture 3.x: a hardware-abstracted control architecture with a
+  HRC-Architecture 3.1: a hardware-abstracted control architecture with a
   barrier-function safety filter for human-robot collaboration
 message: If you use this software or its data, please cite both the software and the article.
 type: software
@@ -9,17 +9,20 @@ authors:
     given-names: Claudio
     orcid: https://orcid.org/0000-0001-7197-8928
     affiliation: >-
-      Electrical Engineering Department, Faculty of Engineering,
+      Department of Electrical Engineering, Faculty of Engineering,
       University of Santiago of Chile
 repository-code: https://github.com/ClaudioUrrea/hrc-architecture
 license: MIT
-version: 3.0.0
-commit: a2ea7bc6c2d6ef91b55c1a8b400a1f77cafaefef
-date-released: '2026-10-28'
+version: 3.1.0
+commit: ab88b07f4bf3bbe0bbddc7554a12d627b85e66f2
+date-released: '2026-11-21'
 identifiers:
   - type: doi
+    value: 10.6084/m9.figshare.35081113
+    description: Raw, hash-manifested run records of the publicly pre-registered release-3.1 evaluation
+  - type: doi
     value: 10.6084/m9.figshare.34845711
-    description: Raw, hash-manifested run records of the pre-registered evaluation campaigns
+    description: Run records of the earlier release-3.0 evaluation (superseded)
 keywords:
   - human-robot collaboration
   - control barrier functions
@@ -34,12 +37,15 @@ preferred-citation:
   type: article
   title: >-
     A Hardware-Abstracted Control Architecture with a Barrier-Function Safety
-    Filter for Human-Robot Collaboration: Pre-Registered Evaluation of Timing,
-    Fault Handling and Interface Conformance
+    Filter for Human-Robot Collaboration: Publicly Pre-Registered Simulation
+    Evaluation of Timing, Fault Handling and Safety Behaviour
   authors:
     - family-names: Urrea
       given-names: Claudio
       orcid: https://orcid.org/0000-0001-7197-8928
+      affiliation: >-
+        Department of Electrical Engineering, Faculty of Engineering,
+        University of Santiago of Chile
   journal: Electronics
   year: 2026
-  notes: Manuscript electronics-4587969, under review
+  notes: Manuscript electronics-4587969, accepted on 23 November 2026
