@@ -2,7 +2,7 @@
 
 > **Version evaluated in the published article: release 3.1, on branch [`release-3.1`](https://github.com/ClaudioUrrea/hrc-architecture/tree/release-3.1).**
 >
-> Urrea, C. A Hardware-Abstracted Control Architecture with a Barrier-Function Safety Filter for Human–Robot Collaboration: Publicly Pre-Registered Simulation Evaluation of Timing, Fault Handling and Safety Behaviour. *Electronics* (MDPI), 2026. Manuscript electronics-4587969, accepted on 23 November 2026; the DOI of the article will be added here on publication.
+> Urrea, C. A Hardware-Abstracted Control Architecture with a Barrier-Function Safety Filter for Human–Robot Collaboration: Publicly Pre-Registered Simulation Evaluation of Timing, Fault Handling and Safety Behaviour. *Electronics* **2026**, *15*(23), 5537. https://doi.org/10.3390/electronics15235537
 >
 > | Tag | Commit | What it fixes |
 > |---|---|---|
