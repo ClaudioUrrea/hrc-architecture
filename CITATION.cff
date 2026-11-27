@@ -48,4 +48,9 @@ preferred-citation:
         University of Santiago of Chile
   journal: Electronics
   year: 2026
-  notes: Manuscript electronics-4587969, accepted on 23 November 2026
+  month: 11
+  volume: 15
+  issue: 23
+  start: 5537
+  doi: 10.3390/electronics15235537
+  url: https://doi.org/10.3390/electronics15235537
